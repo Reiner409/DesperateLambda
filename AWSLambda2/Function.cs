@@ -36,21 +36,21 @@ namespace AWSLambda2
         {
             try
             {
-                request.QueryStringParameters.TryGetValue("operation", out string operazione);
+                request.QueryStringParameters.TryGetValue("operation", out string operation);
 
-                if (operazione.Equals("login"))
+                if (operation.Equals("login"))
                     return Login(request, context);
-                if (operazione.Equals("register"))
+                if (operation.Equals("register"))
                     return Register(request, context);
 
-                if (operazione.EndsWith("Family"))
-                    return Family(request, context, operazione);
+                if (operation.EndsWith("Family"))
+                    return Family(request, context, operation);
 
-                if (operazione.EndsWith("Task"))
-                    return Task(request, context, operazione);
+                if (operation.EndsWith("Task"))
+                    return Task(request, context, operation);
                 
-                if (operazione.EndsWith("Medal"))
-                    return Medal(request, context, operazione);
+                if (operation.EndsWith("Medal"))
+                    return Medal(request, context, operation);
 
                 return Response(Codes.RequestNotFound);
             }
@@ -131,6 +131,8 @@ namespace AWSLambda2
             {
                 case "getTasksFamily":
                     return ResponseTasks(funzioniDatabase.getTasksFamilyMethodAsync(username, family).Result);
+                case "getMedalsFamily":
+                    return ResponseMedals(funzioniDatabase.getMedalFamilyMethodAsync(username, family).Result);
                 case "quitFamily":
                     return Response(funzioniDatabase.QuitFamilyMethodAsync(username, family).Result);
                 default:
@@ -172,12 +174,18 @@ namespace AWSLambda2
             }
         }
 
-        private APIGatewayProxyResponse Medal(APIGatewayProxyRequest request, ILambdaContext context, string operazione)
+        private APIGatewayProxyResponse Medal(APIGatewayProxyRequest request, ILambdaContext context, string operation)
         {
             DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
             IDictionary<string, string> dizionario = request.QueryStringParameters;
             dizionario.TryGetValue(this.username, out string username);
-            return null;
+            switch (operation)
+            {
+                case "getMedal":
+                    return ResponseMedals(funzioniDatabase.GetMedalAsync(username).Result);
+                default:
+                    return Response(Codes.GenericError);
+            }
         }
 
         //Tutte le tasks
@@ -190,6 +198,21 @@ namespace AWSLambda2
             {
                 StatusCode = 200,
                 Body = JsonSerializer.Serialize<List<TaskClass>>(lista)
+                
+            };
+
+        }
+        
+        //Tutte le medaglie
+        private APIGatewayProxyResponse ResponseMedals(List<MedalClass> lista)
+        {
+            if (lista.Equals(null))
+                return Response(Codes.TaskGetNotVerifiedError);
+
+            return new APIGatewayProxyResponse
+            {
+                StatusCode = 200,
+                Body = JsonSerializer.Serialize<List<MedalClass>>(lista)
                 
             };
 

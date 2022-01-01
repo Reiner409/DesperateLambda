@@ -1,4 +1,5 @@
-﻿using Codici;
+﻿using AWSLambda2;
+using Codici;
 using desperate_houseworks_project.Models;
 using Npgsql;
 using System;
@@ -35,6 +36,9 @@ namespace spazio
 
         int familyId = 0;
         int familyNameId = 1;
+
+        int medalNameId = 1;
+        int medalQuantityId = 2;
 
         public async Task<Codes> LoginAsync(string username, string password)
         {
@@ -126,18 +130,7 @@ namespace spazio
 
                 Console.WriteLine("------------------- GetTasksFamily " + username + family + "----------------------");
 
-                List<String> listaFamiliari = new List<string>();
-
-                await using (var cmd = new NpgsqlCommand(String.Format(
-                    "SELECT username from {0} WHERE famiglia={1}",
-                    this.loginTable, family), conn))
-                await using (var reader = await cmd.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        listaFamiliari.Add(reader.GetString(0));
-                    }
-                }
+                List<string> listaFamiliari = await GetListaFamiliari(family, conn);
 
                 List<TaskClass> listaCompiti = new List<TaskClass>();
 
@@ -226,6 +219,7 @@ namespace spazio
                 return Codes.FamilyCreationError;
             }
         }
+
 
         internal async Task<Codes> QuitFamilyMethodAsync(string username, string family)
         {
@@ -433,6 +427,69 @@ namespace spazio
             }
         }
 
+        internal async Task<List<MedalClass>> getMedalFamilyMethodAsync(string username, string family)
+        {
+            if (family == null)
+                return GetMedalAsync(username).Result;
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("------------------- GetMedalsFamily " + username + family + "----------------------");
+
+                List<string> listaFamiliari = await GetListaFamiliari(family, conn);
+
+                List<MedalClass> listaCompiti = new List<MedalClass>();
+
+                foreach (string user in listaFamiliari)
+                {
+                    listaCompiti = listaCompiti.Concat(GetMedalAsync(user).Result).ToList();
+                }
+                return listaCompiti;
+            }
+            catch
+            {
+                Console.WriteLine("------------------- CRASH " + username + "----------------------");
+                return null;
+            }
+        }
+
+        internal async Task<List<MedalClass>> GetMedalAsync(string username)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("-------------------GetMedal " + username + "----------------------");
+
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT * FROM {0} WHERE username='{1}'", medalTable, username), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                    return await CreazioneListaMedals(reader);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private async Task<List<string>> GetListaFamiliari(string family, NpgsqlConnection conn)
+        {
+            List<String> listaFamiliari = new List<string>();
+            await using (var cmd = new NpgsqlCommand(String.Format(
+                "SELECT username from {0} WHERE famiglia={1}",
+                this.loginTable, family), conn))
+            await using (var reader = await cmd.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    listaFamiliari.Add(reader.GetString(0));
+                }
+            }
+            return listaFamiliari;
+        }
+
         private async Task<List<TaskClass>> CreazioneListaTasks(NpgsqlDataReader reader)
         {
             List<TaskClass> lista = new List<TaskClass>();
@@ -446,6 +503,20 @@ namespace spazio
                 tmp.description = reader.GetString(taskDescrId);
                 tmp.verified = reader.GetBoolean(taskVerId);
                 tmp.custom = reader.GetBoolean(taskCustomId);
+                lista.Add(tmp);
+            }
+            return lista;
+        }
+        
+        private async Task<List<MedalClass>> CreazioneListaMedals(NpgsqlDataReader reader)
+        {
+            List<MedalClass> lista = new List<MedalClass>();
+            while (await reader.ReadAsync())
+            {
+                MedalClass tmp = new MedalClass();
+                tmp.user = reader.GetString(usId);
+                tmp.name = reader.GetString(medalNameId);
+                tmp.quantity = reader.GetInt32(medalQuantityId);
                 lista.Add(tmp);
             }
             return lista;
