@@ -1,7 +1,7 @@
 {
   "QueryStringParameters": {
     "u":"pippo",
-    "taskCategory": "cucina",
+    "taskCategory": "Cucina",
     "taskName": "lavatrice",
     "taskTime": "1998-01-01 23:59:59",
      "taskDescription": "Ciao faccio la lavatrice",

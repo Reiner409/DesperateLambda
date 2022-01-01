@@ -1,0 +1,7 @@
+{
+  "QueryStringParameters": {
+    "u": "pippo",
+    "u2": "peppa",
+    "operation" : "requestJoinFamily"
+  }
+}

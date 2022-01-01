@@ -20,6 +20,7 @@ namespace spazio
         String loginTable = "login";
         String taskTable = "tasks";
         String familyTable = "famiglia";
+        String requestJoinFamilyTable = "richiesta_famiglia";
         String medalTable = "medagliere";
 
         int usId = 0;
@@ -188,7 +189,7 @@ namespace spazio
 
                 await using (var cmd = new NpgsqlCommand(String.Format(
                     "SELECT * FROM {0} WHERE id=(Select max(id) from {0})",
-                    this.familyTable, this.familyTable, username), conn))
+                    this.familyTable), conn))
                 {
                     await using (var reader = await cmd.ExecuteReaderAsync())
                     {
@@ -220,6 +221,36 @@ namespace spazio
             }
         }
 
+        internal async Task<Codes> RequestJoinFamilyAsync(string username, string family)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("------------------- RequestJoinFamily " + username + "----------------------");
+
+                if (!VerificaEsistenzaUser(username, conn).Result || family == null)
+                    return Codes.JoinFamilyError;
+
+                if (VerificaEsistenzaRichiesta(username, family, conn).Result)
+                    return Codes.JoinFamilyRequestAlreadyExistsError;
+
+                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0} VALUES (@u, @id)", requestJoinFamilyTable), conn))
+                {
+                    cmd.Parameters.AddWithValue("u", username);
+                    cmd.Parameters.AddWithValue("id", int.Parse(family));
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                return Codes.GenericSuccess;
+            }
+            catch
+            {
+                Console.WriteLine("------------------- CRASH " + username + "----------------------");
+                return Codes.JoinFamilyError;
+            }
+        }
 
         internal async Task<Codes> QuitFamilyMethodAsync(string username, string family)
         {
@@ -304,18 +335,18 @@ namespace spazio
 
                 int contatore = VerificaEsistenzaTaskMedagliere(username, taskCategory, conn).Result;
 
-                if (contatore==0)
+                if (contatore == 0)
                     return CreateMedalTaskAsync(username, taskCategory, conn).Result;
                 else
                 {
                     await using (var cmd = new NpgsqlCommand(String.Format(
                     "UPDATE {0} SET quantita = {1} WHERE username='{2}' AND nome='{3}'",
-                    this.medalTable,contatore+1, username, taskCategory), conn))
+                    this.medalTable, contatore + 1, username, taskCategory), conn))
                     {
                         await cmd.ExecuteNonQueryAsync();
                     }
                 }
-                    return Codes.GenericSuccess;
+                return Codes.GenericSuccess;
             }
             catch
             {
@@ -507,7 +538,7 @@ namespace spazio
             }
             return lista;
         }
-        
+
         private async Task<List<MedalClass>> CreazioneListaMedals(NpgsqlDataReader reader)
         {
             List<MedalClass> lista = new List<MedalClass>();
@@ -597,11 +628,23 @@ namespace spazio
                     "SELECT * FROM {0} WHERE username='{1}'",
                     this.taskTable, username), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
+                    return (await reader.ReadAsync());
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        private async Task<Boolean> VerificaEsistenzaRichiesta(string username, string family, NpgsqlConnection conn)
+        {
+            try
+            {
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                    "SELECT * FROM {0} WHERE username='{1}' AND id={2})",
+                    this.familyTable, username, family), conn))
                 {
-                    if (await reader.ReadAsync())
-                        return (reader.GetString(usId).Equals(username));
-                    else
-                        return false;
+                    await using (var reader = await cmd.ExecuteReaderAsync())
+                        return await reader.ReadAsync();
                 }
             }
             catch

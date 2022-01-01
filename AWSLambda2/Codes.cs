@@ -42,6 +42,8 @@ namespace Codici
         FamilyUserAlreadyInFamily = 432,
         FamilyUserNotInFamily = 433,
         FamilyQuitError = 434,
+        JoinFamilyError = 435,
+        JoinFamilyRequestAlreadyExistsError = 436,
 
         //Medal
         MedalCreationError = 440,
@@ -115,6 +117,12 @@ namespace Codici
                     return "Family - User already in a Family";
                 case 433:
                     return "Family - User not in a Family";
+                case 434:
+                    return "Family - Quit Family Error";
+                case 435:
+                    return "Family - Join Family Error";
+                case 436:
+                    return "Family - Pending Request already Exists";
                     
                 //Medal
                 case 440:

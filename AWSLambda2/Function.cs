@@ -24,6 +24,7 @@ namespace AWSLambda2
         readonly string email = "e";
 
         readonly string family = "family";
+        readonly string usernameToJoinFamily = "u2";
 
         readonly string taskName = "taskName";
         readonly string taskCategory = "taskCategory";
@@ -118,6 +119,8 @@ namespace AWSLambda2
                 dizionario.TryGetValue(this.family, out family);
                 return Response(funzioniDatabase.AddToFamilyMethodAsync(username, family).Result);
             }
+            
+
 
             try
             {
@@ -127,6 +130,7 @@ namespace AWSLambda2
             {
                 family = null;
             }
+
             switch (operation)
             {
                 case "getTasksFamily":
@@ -135,6 +139,12 @@ namespace AWSLambda2
                     return ResponseMedals(funzioniDatabase.getMedalFamilyMethodAsync(username, family).Result);
                 case "quitFamily":
                     return Response(funzioniDatabase.QuitFamilyMethodAsync(username, family).Result);
+
+                case "requestJoinFamily":
+                    string usernameToJoinFamily;
+                    dizionario.TryGetValue(this.usernameToJoinFamily, out usernameToJoinFamily);
+                    return Response(funzioniDatabase.RequestJoinFamilyAsync(usernameToJoinFamily, family).Result);
+
                 default:
                     return Response(Codes.RequestNotFound);
             }
