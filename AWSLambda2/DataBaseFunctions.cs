@@ -85,7 +85,7 @@ namespace spazio
 
                 Console.WriteLine("-------------------REGISTER " + username + "----------------------");
 
-                if (!MailVerificata(email))
+                if ( ! MailVerificata(email))
                 {
                     return Codes.RegistrationEmailNotValid;
                 }
@@ -118,8 +118,7 @@ namespace spazio
             }
         }
 
-
-        internal async Task<List<TaskClass>> getTasksFamilyMethodAsync(string username, string family)
+        internal async Task<List<TaskClass>> GetTasksFamilyMethodAsync(string username, string family)
         {
             if (family == null)
                 return GetEveryTaskMethodAsync(username).Result;
@@ -149,6 +148,26 @@ namespace spazio
             }
         }
 
+        internal async Task<List<RequestClass>> GetJoinRequestsFamilyAsync(string username)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("-------------------GetJoinRequestsFamily" + username + "----------------------");
+
+                await using (var cmd = new NpgsqlCommand(
+                    String.Format("SELECT username_requesting, nome, {0}.id FROM {0} JOIN {1} ON {0}.id={1}.id WHERE username='{2}'",
+                    familyTable, requestJoinFamilyTable,username), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                    return await CreazioneListaRequests(reader);
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
         internal async Task<Codes> AddToFamilyMethodAsync(string username, string family)
         {
@@ -160,11 +179,31 @@ namespace spazio
                 Console.WriteLine("------------------- AddToFamily " + username + family + "----------------------");
 
                 await using (var cmd = new NpgsqlCommand(String.Format(
+                    "SELECT Count(*) as conteggio from {0} WHERE username='{1}' AND id={2}",
+                    this.requestJoinFamilyTable, username, family), conn))
+
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (reader.ReadAsync().Result)
+                        if (reader.GetInt16(0) == 0)
+                            return Codes.FamilyNoSuchJoinRequestError;
+                }
+
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
                     "UPDATE {0} SET famiglia={1} WHERE username='{2}'",
                     this.loginTable, family, username), conn))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                    "DELETE from {0} WHERE username='{1}' AND id={2}",
+                    this.requestJoinFamilyTable, username, family), conn))
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
                 return Codes.GenericSuccess;
             }
             catch
@@ -221,7 +260,7 @@ namespace spazio
             }
         }
 
-        internal async Task<Codes> RequestJoinFamilyAsync(string username, string family)
+        internal async Task<Codes> RequestJoinFamilyAsync(string username, string usernameRequesting, string family)
         {
             try
             {
@@ -236,10 +275,11 @@ namespace spazio
                 if (VerificaEsistenzaRichiesta(username, family, conn).Result)
                     return Codes.JoinFamilyRequestAlreadyExistsError;
 
-                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0} VALUES (@u, @id)", requestJoinFamilyTable), conn))
+                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0} VALUES (@u, @id, @u_requesting)", requestJoinFamilyTable), conn))
                 {
                     cmd.Parameters.AddWithValue("u", username);
                     cmd.Parameters.AddWithValue("id", int.Parse(family));
+                    cmd.Parameters.AddWithValue("u_requesting", usernameRequesting);
                     await cmd.ExecuteNonQueryAsync();
                 }
 
@@ -553,6 +593,20 @@ namespace spazio
             return lista;
         }
 
+        private async Task<List<RequestClass>> CreazioneListaRequests(NpgsqlDataReader reader)
+        {
+            List<RequestClass> lista = new List<RequestClass>();
+            while (await reader.ReadAsync())
+            {
+                RequestClass tmp = new RequestClass();
+                tmp.userAsking = reader.GetString(0);
+                tmp.familyName = reader.GetString(1);
+                tmp.familyCode = reader.GetInt16(2);
+                lista.Add(tmp);
+            }
+            return lista;
+        }
+
         private async Task<Boolean> VerificaEsistenzaTask(string username, string name, string category, string date, string description, NpgsqlConnection conn)
         {
             try
@@ -562,14 +616,7 @@ namespace spazio
                     this.taskTable, username, category, name, description, date), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    if (await reader.ReadAsync())
-                        return (reader.GetString(usId).Equals(username) &&
-                                    reader.GetString(taskCatId).Equals(category) &&
-                                    reader.GetString(taskNameId).Equals(name) &&
-                                    reader.GetDateTime(taskDateId).Equals(DateTime.Parse(date)) &&
-                                    reader.GetString(taskDescrId).Equals(description));
-                    else
-                        return false;
+                    return await reader.ReadAsync();
                 }
             }
             catch
@@ -618,7 +665,6 @@ namespace spazio
                 return 0;
             }
         }
-
 
         private async Task<Boolean> VerificaEsistenzaUser(string username, NpgsqlConnection conn)
         {

@@ -2,12 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Amazon.DynamoDBv2;
 using Amazon.Lambda.APIGatewayEvents;
 using Amazon.Lambda.Core;
 using Codici;
 using desperate_houseworks_project.Models;
-using Npgsql;
 using spazio;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
@@ -107,9 +105,9 @@ namespace AWSLambda2
 
             if (operation.Equals("createFamily"))
             {
-                dizionario.TryGetValue(this.family, out family);
-                if (family!=null)
+                if (funzioniDatabase.User2Family(username).Result.Count != 0)
                     return Response(Codes.FamilyUserAlreadyInFamily);
+                dizionario.TryGetValue(this.family, out family);
                 return Response(funzioniDatabase.CreateFamilyMethodAsync(username, family).Result);
             }
             
@@ -120,8 +118,11 @@ namespace AWSLambda2
                 return Response(funzioniDatabase.AddToFamilyMethodAsync(username, family).Result);
             }
             
-
-
+            if (operation.Equals("getJoinRequestsFamily"))
+            {
+                return Response(funzioniDatabase.GetJoinRequestsFamilyAsync(username).Result);
+            }
+            
             try
             {
                 funzioniDatabase.User2Family(username).Result.TryGetValue("id", out family);
@@ -134,21 +135,22 @@ namespace AWSLambda2
             switch (operation)
             {
                 case "getTasksFamily":
-                    return ResponseTasks(funzioniDatabase.getTasksFamilyMethodAsync(username, family).Result);
+                    return Response(funzioniDatabase.GetTasksFamilyMethodAsync(username, family).Result);
                 case "getMedalsFamily":
-                    return ResponseMedals(funzioniDatabase.getMedalFamilyMethodAsync(username, family).Result);
+                    return Response(funzioniDatabase.getMedalFamilyMethodAsync(username, family).Result);
                 case "quitFamily":
                     return Response(funzioniDatabase.QuitFamilyMethodAsync(username, family).Result);
 
                 case "requestJoinFamily":
                     string usernameToJoinFamily;
                     dizionario.TryGetValue(this.usernameToJoinFamily, out usernameToJoinFamily);
-                    return Response(funzioniDatabase.RequestJoinFamilyAsync(usernameToJoinFamily, family).Result);
+                    return Response(funzioniDatabase.RequestJoinFamilyAsync(usernameToJoinFamily, username, family).Result);
 
                 default:
                     return Response(Codes.RequestNotFound);
             }
         }
+
 
         //Creazione di Tasks all'interno della tabella DisperateTasks
         private APIGatewayProxyResponse Task(APIGatewayProxyRequest request, ILambdaContext context, string operation)
@@ -159,11 +161,11 @@ namespace AWSLambda2
             dizionario.TryGetValue(this.username, out string username);
 
             if (operation.Equals("getNotVerifiedTask"))
-                return ResponseTasks((funzioniDatabase.GetVerifiedTaskMethodAsync(username, "false").Result));
+                return Response((funzioniDatabase.GetVerifiedTaskMethodAsync(username, "false").Result));
             if (operation.Equals("getVerifiedTask"))
-                return ResponseTasks((funzioniDatabase.GetVerifiedTaskMethodAsync(username, "true").Result));
+                return Response((funzioniDatabase.GetVerifiedTaskMethodAsync(username, "true").Result));
             if (operation.Equals("getTask"))
-                return ResponseTasks((funzioniDatabase.GetEveryTaskMethodAsync(username).Result));
+                return Response((funzioniDatabase.GetEveryTaskMethodAsync(username).Result));
 
             dizionario.TryGetValue(this.taskName, out string taskN);
             dizionario.TryGetValue(this.taskCategory, out string taskC);
@@ -192,14 +194,22 @@ namespace AWSLambda2
             switch (operation)
             {
                 case "getMedal":
-                    return ResponseMedals(funzioniDatabase.GetMedalAsync(username).Result);
+                    return Response(funzioniDatabase.GetMedalAsync(username).Result);
                 default:
                     return Response(Codes.GenericError);
             }
         }
 
+        private APIGatewayProxyResponse Response(List<RequestClass> lista)
+        {
+            return new APIGatewayProxyResponse
+            {
+                StatusCode = 200,
+                Body = JsonSerializer.Serialize<List<RequestClass>>(lista)
+            };
+        }
         //Tutte le tasks
-        private APIGatewayProxyResponse ResponseTasks(List<TaskClass> lista)
+        private APIGatewayProxyResponse Response(List<TaskClass> lista)
         {
             if (lista.Equals(null))
                 return Response(Codes.TaskGetNotVerifiedError);
@@ -214,7 +224,7 @@ namespace AWSLambda2
         }
         
         //Tutte le medaglie
-        private APIGatewayProxyResponse ResponseMedals(List<MedalClass> lista)
+        private APIGatewayProxyResponse Response(List<MedalClass> lista)
         {
             if (lista.Equals(null))
                 return Response(Codes.TaskGetNotVerifiedError);

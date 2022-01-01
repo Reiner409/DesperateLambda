@@ -44,6 +44,7 @@ namespace Codici
         FamilyQuitError = 434,
         JoinFamilyError = 435,
         JoinFamilyRequestAlreadyExistsError = 436,
+        FamilyNoSuchJoinRequestError = 437,
 
         //Medal
         MedalCreationError = 440,
@@ -123,7 +124,9 @@ namespace Codici
                     return "Family - Join Family Error";
                 case 436:
                     return "Family - Pending Request already Exists";
-                    
+                case 437:
+                    return "Family - No such Pending family join request exist";
+
                 //Medal
                 case 440:
                     return "Medal - Creation failed";
