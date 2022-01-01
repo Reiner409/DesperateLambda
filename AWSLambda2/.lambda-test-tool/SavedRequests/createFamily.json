@@ -1,0 +1,7 @@
+{
+  "QueryStringParameters": {
+    "u": "pippo",
+    "family": "famigliolaFelice",
+    "operation" : "createFamily"
+  }
+}
