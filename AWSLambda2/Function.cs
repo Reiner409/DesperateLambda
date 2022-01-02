@@ -15,8 +15,6 @@ namespace AWSLambda2
 {
     public class Function
     {
-
-
         readonly string username = "u";
         readonly string password = "p";
         readonly string email = "e";
@@ -118,11 +116,6 @@ namespace AWSLambda2
                 return Response(funzioniDatabase.AddToFamilyMethodAsync(username, family).Result);
             }
             
-            if (operation.Equals("getJoinRequestsFamily"))
-            {
-                return Response(funzioniDatabase.GetJoinRequestsFamilyAsync(username).Result);
-            }
-            
             try
             {
                 funzioniDatabase.User2Family(username).Result.TryGetValue("id", out family);
@@ -140,6 +133,8 @@ namespace AWSLambda2
                     return Response(funzioniDatabase.getMedalFamilyMethodAsync(username, family).Result);
                 case "quitFamily":
                     return Response(funzioniDatabase.QuitFamilyMethodAsync(username, family).Result);
+                case "getJoinRequestsFamily":
+                    return Response(funzioniDatabase.GetJoinRequestsFamilyAsync(username).Result);
 
                 case "requestJoinFamily":
                     string usernameToJoinFamily;
@@ -208,6 +203,7 @@ namespace AWSLambda2
                 Body = JsonSerializer.Serialize<List<RequestClass>>(lista)
             };
         }
+
         //Tutte le tasks
         private APIGatewayProxyResponse Response(List<TaskClass> lista)
         {
