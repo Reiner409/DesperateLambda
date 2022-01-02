@@ -53,5 +53,9 @@ FAMILY
  MEDAL
  -  getMedal : Ottiene tutte le medaglie dell'utente
     u
+
+LOG
+ -  getLog : Ottiene il LOG della famiglia / dell'utente (Solo nel caso non avente una famiglia)
+    u
     
  

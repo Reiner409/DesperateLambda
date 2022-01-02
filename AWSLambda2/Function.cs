@@ -45,9 +45,12 @@ namespace AWSLambda2
 
                 if (operation.EndsWith("Task"))
                     return Task(request, context, operation);
-                
+
                 if (operation.EndsWith("Medal"))
                     return Medal(request, context, operation);
+
+                if (operation.EndsWith("Log"))
+                    return Log(request, context, operation);
 
                 return Response(Codes.RequestNotFound);
             }
@@ -94,6 +97,32 @@ namespace AWSLambda2
             return Response(codice.Result);
         }
 
+        private APIGatewayProxyResponse Log(APIGatewayProxyRequest request, ILambdaContext context, string operation)
+
+        {
+
+            IDictionary<string, string> dizionario = request.QueryStringParameters;
+            dizionario.TryGetValue(this.username, out string userID);
+
+            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            try
+            {
+                if (operation.Equals("getLog"))
+                {
+                    if (funzioniDatabase.User2Family(userID).Result.TryGetValue("id", out string family))
+                        return Response(funzioniDatabase.GetLog(family).Result);
+                    else
+                        return Response(funzioniDatabase.GetLog(userID).Result);
+                }
+                else
+                    return Response(Codes.RequestNotFound);
+            }
+            catch
+            {
+                return Response(Codes.DatabaseConnectionError);
+            }
+        }
+
         private APIGatewayProxyResponse Family(APIGatewayProxyRequest request, ILambdaContext context, string operation)
         {
             DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
@@ -108,14 +137,14 @@ namespace AWSLambda2
                 dizionario.TryGetValue(this.family, out family);
                 return Response(funzioniDatabase.CreateFamilyMethodAsync(username, family).Result);
             }
-            
+
 
             if (operation.Equals("addToFamily"))
             {
                 dizionario.TryGetValue(this.family, out family);
                 return Response(funzioniDatabase.AddToFamilyMethodAsync(username, family).Result);
             }
-            
+
             try
             {
                 funzioniDatabase.User2Family(username).Result.TryGetValue("id", out family);
@@ -130,7 +159,7 @@ namespace AWSLambda2
                 case "getTasksFamily":
                     return Response(funzioniDatabase.GetTasksFamilyMethodAsync(username, family).Result);
                 case "getMedalsFamily":
-                    return Response(funzioniDatabase.getMedalFamilyMethodAsync(username, family).Result);
+                    return Response(funzioniDatabase.GetMedalFamilyMethodAsync(username, family).Result);
                 case "quitFamily":
                     return Response(funzioniDatabase.QuitFamilyMethodAsync(username, family).Result);
                 case "getJoinRequestsFamily":
@@ -195,44 +224,44 @@ namespace AWSLambda2
             }
         }
 
-        private APIGatewayProxyResponse Response(List<RequestClass> lista)
+        private APIGatewayProxyResponse Response<T>(List<T> lista)
         {
             return new APIGatewayProxyResponse
             {
                 StatusCode = 200,
-                Body = JsonSerializer.Serialize<List<RequestClass>>(lista)
+                Body = JsonSerializer.Serialize(lista)
             };
         }
 
-        //Tutte le tasks
-        private APIGatewayProxyResponse Response(List<TaskClass> lista)
-        {
-            if (lista.Equals(null))
-                return Response(Codes.TaskGetNotVerifiedError);
+        /*        //Tutte le tasks
+                private APIGatewayProxyResponse Response(List<TaskClass> lista)
+                {
+                    if (lista.Equals(null))
+                        return Response(Codes.TaskGetNotVerifiedError);
 
-            return new APIGatewayProxyResponse
-            {
-                StatusCode = 200,
-                Body = JsonSerializer.Serialize<List<TaskClass>>(lista)
-                
-            };
+                    return new APIGatewayProxyResponse
+                    {
+                        StatusCode = 200,
+                        Body = JsonSerializer.Serialize<List<TaskClass>>(lista)
 
-        }
-        
-        //Tutte le medaglie
-        private APIGatewayProxyResponse Response(List<MedalClass> lista)
-        {
-            if (lista.Equals(null))
-                return Response(Codes.TaskGetNotVerifiedError);
+                    };
 
-            return new APIGatewayProxyResponse
-            {
-                StatusCode = 200,
-                Body = JsonSerializer.Serialize<List<MedalClass>>(lista)
-                
-            };
+                }
 
-        }
+                //Tutte le medaglie
+                private APIGatewayProxyResponse Response(List<MedalClass> lista)
+                {
+                    if (lista.Equals(null))
+                        return Response(Codes.TaskGetNotVerifiedError);
+
+                    return new APIGatewayProxyResponse
+                    {
+                        StatusCode = 200,
+                        Body = JsonSerializer.Serialize<List<MedalClass>>(lista)
+
+                    };
+
+                }*/
 
         //Risposte ai codici
         private APIGatewayProxyResponse Response(Codes code)

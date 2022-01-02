@@ -22,6 +22,7 @@ namespace spazio
         String familyTable = "famiglia";
         String requestJoinFamilyTable = "richiesta_famiglia";
         String medalTable = "medagliere";
+        String logTable = "log_famiglia";
 
         int usId = 0;
         int pwId = 1;
@@ -85,7 +86,7 @@ namespace spazio
 
                 Console.WriteLine("-------------------REGISTER " + username + "----------------------");
 
-                if ( ! MailVerificata(email))
+                if (!MailVerificata(email))
                 {
                     return Codes.RegistrationEmailNotValid;
                 }
@@ -115,6 +116,33 @@ namespace spazio
             {
                 Console.WriteLine("-------------------CRASH " + username + "----------------------");
                 return Codes.RegistrationError;
+            }
+        }
+
+        internal async Task<List<String>> GetLog(string idFamiglia, int numero = 10)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+                List<String> lista = new List<String>();
+
+                Console.WriteLine("-------------------GetLastLogs " + idFamiglia + "----------------------");
+
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT evento FROM {0} WHERE id='{1}' ORDER BY data DESC LIMIT {2}", logTable, idFamiglia, numero), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        String tmp = reader.GetString(0);
+                        lista.Add(tmp);
+                    }
+                    return lista;
+                }
+            }
+            catch
+            {
+                return null;
             }
         }
 
@@ -159,7 +187,7 @@ namespace spazio
 
                 await using (var cmd = new NpgsqlCommand(
                     String.Format("SELECT username_requesting, nome, {0}.id FROM {0} JOIN {1} ON {0}.id={1}.id WHERE username='{2}'",
-                    familyTable, requestJoinFamilyTable,username), conn))
+                    familyTable, requestJoinFamilyTable, username), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                     return await CreazioneListaRequests(reader);
             }
@@ -203,6 +231,9 @@ namespace spazio
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
+
+                string Evento = username + " si è aggiunto alla famiglia!";
+                CreateLogAsync(username, Evento, conn);
 
                 return Codes.GenericSuccess;
             }
@@ -283,6 +314,9 @@ namespace spazio
                     await cmd.ExecuteNonQueryAsync();
                 }
 
+                string Evento = usernameRequesting + " ha invitato " + username + " ad unirsi alla vostra famiglia";
+                CreateLogAsync(usernameRequesting, Evento, conn);
+
                 return Codes.GenericSuccess;
             }
             catch
@@ -303,12 +337,16 @@ namespace spazio
 
                 Console.WriteLine("------------------- QuitFamily " + username + family + "----------------------");
 
+                string Evento = username + " ha abbandonato la famiglia.";
+                CreateLogAsync(username, Evento, conn);
+
                 await using (var cmd = new NpgsqlCommand(String.Format(
                     "UPDATE {0} SET famiglia=null WHERE username='{2}'",
                     this.loginTable, family, username), conn))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
+
                 return Codes.GenericSuccess;
             }
             catch
@@ -374,6 +412,9 @@ namespace spazio
                 }
 
                 int contatore = VerificaEsistenzaTaskMedagliere(username, taskCategory, conn).Result;
+
+                string Evento = "L'utente " + username + " ha completato il seguente compito: " + taskName;
+                CreateLogAsync(username, Evento, conn);
 
                 if (contatore == 0)
                     return CreateMedalTaskAsync(username, taskCategory, conn).Result;
@@ -498,7 +539,7 @@ namespace spazio
             }
         }
 
-        internal async Task<List<MedalClass>> getMedalFamilyMethodAsync(string username, string family)
+        internal async Task<List<MedalClass>> GetMedalFamilyMethodAsync(string username, string family)
         {
             if (family == null)
                 return GetMedalAsync(username).Result;
@@ -641,6 +682,29 @@ namespace spazio
             catch
             {
                 return Codes.MedalCreationError;
+            }
+
+        }
+
+        private async void CreateLogAsync(string username, string evento, NpgsqlConnection conn)
+        {
+            if (User2Family(username).Result.TryGetValue("id", out string family))
+                username = family;
+
+            try
+            {
+                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@id, @evento, @data)", this.logTable), conn))
+                {
+                    cmd.Parameters.AddWithValue("id", username);
+                    cmd.Parameters.AddWithValue("evento", evento);
+                    cmd.Parameters.AddWithValue("data", DateTime.Now);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                Console.WriteLine("LOG CREATO CON SUCCESSO");
+            }
+            catch
+            {
+                Console.WriteLine("CRASH SULLA CRAZIONE DEL LOG");
             }
 
         }
