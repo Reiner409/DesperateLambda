@@ -1,6 +1,7 @@
 {
   "QueryStringParameters": {
     "u": "pippo",
+    "numeroLog":"2",
     "operation" : "getLog"
   }
 }
