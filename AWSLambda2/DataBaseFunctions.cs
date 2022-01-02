@@ -119,17 +119,20 @@ namespace spazio
             }
         }
 
-        internal async Task<List<String>> GetLog(string idFamiglia, int numero = 10)
+        internal async Task<List<String>> GetLog(string user, int numero = 10)
         {
             try
             {
-                await using var conn = new NpgsqlConnection(connString);
+                if (User2Family(user).Result.TryGetValue("id", out string family))
+                    user = family;
+
+                    await using var conn = new NpgsqlConnection(connString);
                 await conn.OpenAsync();
                 List<String> lista = new List<String>();
 
-                Console.WriteLine("-------------------GetLastLogs " + idFamiglia + "----------------------");
+                Console.WriteLine("-------------------GetLastLogs " + user + "----------------------");
 
-                await using (var cmd = new NpgsqlCommand(String.Format("SELECT evento FROM {0} WHERE id='{1}' ORDER BY data DESC LIMIT {2}", logTable, idFamiglia, numero), conn))
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT evento FROM {0} WHERE id='{1}' ORDER BY data DESC LIMIT {2}", logTable, user, numero), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     while (await reader.ReadAsync())
@@ -233,7 +236,7 @@ namespace spazio
                 }
 
                 string Evento = username + " si è aggiunto alla famiglia!";
-                CreateLogAsync(username, Evento, conn);
+                await CreateLogAsync (username, Evento, conn);
 
                 return Codes.GenericSuccess;
             }
@@ -338,7 +341,7 @@ namespace spazio
                 Console.WriteLine("------------------- QuitFamily " + username + family + "----------------------");
 
                 string Evento = username + " ha abbandonato la famiglia.";
-                CreateLogAsync(username, Evento, conn);
+                await CreateLogAsync(username, Evento, conn);
 
                 await using (var cmd = new NpgsqlCommand(String.Format(
                     "UPDATE {0} SET famiglia=null WHERE username='{2}'",
@@ -414,7 +417,7 @@ namespace spazio
                 int contatore = VerificaEsistenzaTaskMedagliere(username, taskCategory, conn).Result;
 
                 string Evento = "L'utente " + username + " ha completato il seguente compito: " + taskName;
-                CreateLogAsync(username, Evento, conn);
+                await CreateLogAsync(username, Evento, conn);
 
                 if (contatore == 0)
                     return CreateMedalTaskAsync(username, taskCategory, conn).Result;
@@ -686,25 +689,29 @@ namespace spazio
 
         }
 
-        private async void CreateLogAsync(string username, string evento, NpgsqlConnection conn)
+        private async Task<bool> CreateLogAsync(string username, string evento, NpgsqlConnection conn)
         {
+            string tmp;
             if (User2Family(username).Result.TryGetValue("id", out string family))
-                username = family;
-
+                tmp = family;
+            else
+                tmp = username;
             try
             {
                 await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@id, @evento, @data)", this.logTable), conn))
                 {
-                    cmd.Parameters.AddWithValue("id", username);
+                    cmd.Parameters.AddWithValue("id", tmp);
                     cmd.Parameters.AddWithValue("evento", evento);
                     cmd.Parameters.AddWithValue("data", DateTime.Now);
                     await cmd.ExecuteNonQueryAsync();
                 }
                 Console.WriteLine("LOG CREATO CON SUCCESSO");
+                return true;
             }
             catch
             {
                 Console.WriteLine("CRASH SULLA CRAZIONE DEL LOG");
+                return false;
             }
 
         }

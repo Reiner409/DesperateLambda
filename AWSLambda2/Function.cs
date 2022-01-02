@@ -29,6 +29,8 @@ namespace AWSLambda2
         readonly string taskDone = "taskDone";
         readonly string taskCustom = "taskCustom";
 
+        readonly string numeroLog = "numeroLog";
+
         public APIGatewayProxyResponse FunctionHandler(APIGatewayProxyRequest request, ILambdaContext context)
         {
             try
@@ -109,8 +111,8 @@ namespace AWSLambda2
             {
                 if (operation.Equals("getLog"))
                 {
-                    if (funzioniDatabase.User2Family(userID).Result.TryGetValue("id", out string family))
-                        return Response(funzioniDatabase.GetLog(family).Result);
+                    if (dizionario.TryGetValue(this.numeroLog, out string numero))
+                        return Response(funzioniDatabase.GetLog(userID, int.Parse(numero)).Result);
                     else
                         return Response(funzioniDatabase.GetLog(userID).Result);
                 }
