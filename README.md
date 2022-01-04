@@ -29,6 +29,9 @@ FAMILY
     
  -  requestJoinFamily : L'utente A effettua la richiesta per entrare nella famiglia all'utente B
     u (RICHIEDENTE) , u2 (JOINANTE)
+
+ -  getFamily : Ottiene tutti i membri appartenenti alla famiglia.
+    u
  
  
  TASK
