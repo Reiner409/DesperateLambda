@@ -181,6 +181,27 @@ namespace spazio
             }
         }
 
+        internal async Task<List<FamilyMember>> GetFamily(string username, string family)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("-------------------GetFamily" + username + "----------------------");
+
+                await using (var cmd = new NpgsqlCommand(
+                    String.Format("SELECT username, immagine FROM {0} WHERE famiglia={1} AND NOT username='{2}' ",
+                    loginTable, family, username), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                    return await CreazioneListaFamilyMember(reader);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         internal async Task<List<RequestClass>> GetJoinRequestsFamilyAsync(string username)
         {
             try
@@ -648,6 +669,18 @@ namespace spazio
                 tmp.userAsking = reader.GetString(0);
                 tmp.familyName = reader.GetString(1);
                 tmp.familyCode = reader.GetInt16(2);
+                lista.Add(tmp);
+            }
+            return lista;
+        }
+        private async Task<List<FamilyMember>> CreazioneListaFamilyMember(NpgsqlDataReader reader)
+        {
+            List<FamilyMember> lista = new List<FamilyMember>();
+            while (await reader.ReadAsync())
+            {
+                FamilyMember tmp = new FamilyMember();
+                tmp.Username = reader.GetString(0);
+                tmp.Picture = reader.GetInt32(1);
                 lista.Add(tmp);
             }
             return lista;

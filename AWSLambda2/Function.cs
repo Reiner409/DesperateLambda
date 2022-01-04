@@ -162,6 +162,8 @@ namespace AWSLambda2
                     return Response(funzioniDatabase.GetTasksFamilyMethodAsync(username, family).Result);
                 case "getMedalsFamily":
                     return Response(funzioniDatabase.GetMedalFamilyMethodAsync(username, family).Result);
+                case "getFamily":
+                    return Response(funzioniDatabase.GetFamily(username, family).Result);
                 case "quitFamily":
                     return Response(funzioniDatabase.QuitFamilyMethodAsync(username, family).Result);
                 case "getJoinRequestsFamily":
