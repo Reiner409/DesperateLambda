@@ -119,7 +119,7 @@ namespace spazio
             }
         }
 
-        internal async Task<List<String>> GetLog(string user, int numero = 10)
+        internal async Task<List<LogClass>> GetLog(string user, int numero = 10)
         {
             try
             {
@@ -128,16 +128,18 @@ namespace spazio
 
                     await using var conn = new NpgsqlConnection(connString);
                 await conn.OpenAsync();
-                List<String> lista = new List<String>();
+                List<LogClass> lista = new List<LogClass>();
 
                 Console.WriteLine("-------------------GetLastLogs " + user + "----------------------");
 
-                await using (var cmd = new NpgsqlCommand(String.Format("SELECT evento FROM {0} WHERE id='{1}' ORDER BY data DESC LIMIT {2}", logTable, user, numero), conn))
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT evento, data FROM {0} WHERE id='{1}' ORDER BY data DESC LIMIT {2}", logTable, user, numero), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     while (await reader.ReadAsync())
                     {
-                        String tmp = reader.GetString(0);
+                        LogClass tmp = new LogClass();
+                        tmp.log = reader.GetString(0);
+                        tmp.Data = reader.GetDateTime(1);
                         lista.Add(tmp);
                     }
                     return lista;
@@ -306,7 +308,7 @@ namespace spazio
                 if (!VerificaEsistenzaUser(username, conn).Result || family == null)
                     return Codes.JoinFamilyError;
 
-                if (VerificaEsistenzaRichiesta(username, family, conn).Result)
+                if (!VerificaEsistenzaRichiesta(username, family, conn).Result)
                     return Codes.JoinFamilyRequestAlreadyExistsError;
 
                 await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0} VALUES (@u, @id, @u_requesting)", requestJoinFamilyTable), conn))
@@ -318,7 +320,7 @@ namespace spazio
                 }
 
                 string Evento = usernameRequesting + " ha invitato " + username + " ad unirsi alla vostra famiglia";
-                CreateLogAsync(usernameRequesting, Evento, conn);
+                await CreateLogAsync(usernameRequesting, Evento, conn);
 
                 return Codes.GenericSuccess;
             }
