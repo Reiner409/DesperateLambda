@@ -78,7 +78,7 @@ namespace AWSLambda2
 
                 Task<Codes> codice = funzioniDatabase.LoginAsync(userID, password);
 
-                return Response(codice.Result);
+                return ResponseLogin(codice.Result);
             }
             catch
             {
@@ -237,36 +237,6 @@ namespace AWSLambda2
             };
         }
 
-        /*        //Tutte le tasks
-                private APIGatewayProxyResponse Response(List<TaskClass> lista)
-                {
-                    if (lista.Equals(null))
-                        return Response(Codes.TaskGetNotVerifiedError);
-
-                    return new APIGatewayProxyResponse
-                    {
-                        StatusCode = 200,
-                        Body = JsonSerializer.Serialize<List<TaskClass>>(lista)
-
-                    };
-
-                }
-
-                //Tutte le medaglie
-                private APIGatewayProxyResponse Response(List<MedalClass> lista)
-                {
-                    if (lista.Equals(null))
-                        return Response(Codes.TaskGetNotVerifiedError);
-
-                    return new APIGatewayProxyResponse
-                    {
-                        StatusCode = 200,
-                        Body = JsonSerializer.Serialize<List<MedalClass>>(lista)
-
-                    };
-
-                }*/
-
         //Risposte ai codici
         private APIGatewayProxyResponse Response(Codes code)
         {
@@ -279,6 +249,21 @@ namespace AWSLambda2
                 StatusCode = codice,
                 Body = gestione.CodeToText(codice)
             };
+        }
+
+        private APIGatewayProxyResponse ResponseLogin(Codes code)
+        {
+
+            GestioneCodici gestione = new GestioneCodici();
+
+            if ((int)code < 10)
+                return new APIGatewayProxyResponse
+                {
+                    StatusCode = 200,
+                    Body = ((int)code).ToString()
+                };
+            else
+                return Response(code);
         }
     }
 }

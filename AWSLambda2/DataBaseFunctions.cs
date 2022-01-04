@@ -28,6 +28,7 @@ namespace spazio
         int pwId = 1;
         int emId = 2;
         int loginVerId = 3;
+        int iconId= 5;
 
         int taskCatId = 1;
         int taskNameId = 2;
@@ -59,7 +60,7 @@ namespace spazio
                         {
                             if (reader.GetString(usId).Equals(username) && reader.GetString(pwId).Equals(password))
                                 if (reader.GetBoolean(loginVerId))
-                                    return Codes.GenericSuccess;
+                                    return (Codes)reader.GetInt32(iconId);
                                 else
                                     return Codes.LoginVerificationError;
                             else
