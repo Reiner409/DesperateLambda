@@ -30,6 +30,9 @@ FAMILY
  -  requestJoinFamily : L'utente A effettua la richiesta per entrare nella famiglia all'utente B
     u (RICHIEDENTE) , u2 (JOINANTE)
 
+ -  refuseJoinFamily : L'utente A riufiuta la richiesta effettuata dall'utente B riguardo all'u unirsi alla sua famiglia
+    u, family (ID)
+
  -  getFamily : Ottiene tutti i membri appartenenti alla famiglia.
     u
  
