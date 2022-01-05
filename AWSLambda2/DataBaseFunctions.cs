@@ -334,7 +334,7 @@ namespace spazio
                 Console.WriteLine("------------------- RequestJoinFamily " + username + "----------------------");
 
                 if (!VerificaEsistenzaUser(username, conn).Result || family == null)
-                    return Codes.LoginGenericError;
+                    return Codes.JoinFamilyError;
 
                 Console.WriteLine("------------------- SuperatoTestEsistenzaUser " + username + " -------------------");
 
