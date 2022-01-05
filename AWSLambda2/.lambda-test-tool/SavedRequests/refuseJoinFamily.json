@@ -1,0 +1,7 @@
+{
+  "QueryStringParameters": {
+    "u": "leandro",
+    "family": "1",
+    "operation" : "refuseJoinFamily"
+  }
+}

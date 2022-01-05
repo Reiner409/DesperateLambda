@@ -147,6 +147,12 @@ namespace AWSLambda2
                 return Response(funzioniDatabase.AddToFamilyMethodAsync(username, family).Result);
             }
 
+            if (operation.Equals("refuseJoinFamily"))
+            {
+                dizionario.TryGetValue(this.family, out family);
+                return Response(funzioniDatabase.RefuseJoinFamilyAsync(username, family).Result);
+            }
+
             try
             {
                 funzioniDatabase.User2Family(username).Result.TryGetValue("id", out family);

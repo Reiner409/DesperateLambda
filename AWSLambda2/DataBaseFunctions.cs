@@ -165,6 +165,8 @@ namespace spazio
             }
         }
 
+
+
         internal async Task<List<TaskClass>> GetTasksFamilyMethodAsync(string username, string family)
         {
             if (family == null)
@@ -234,6 +236,33 @@ namespace spazio
             catch
             {
                 return null;
+            }
+        }
+
+        internal async Task<Codes> RefuseJoinFamilyAsync(string username, string family)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("------------------- RefuseJoinFamily " + username + " " + family + " ----------------------");
+
+                if (!VerificaEsistenzaUser(username, conn).Result)
+                    return Codes.FamilyCreationError;
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                    "DELETE FROM {0} WHERE username='{1}' AND id={2}",
+                    this.requestJoinFamilyTable, username, family), conn))
+                {
+                    await using (var reader = await cmd.ExecuteReaderAsync())
+                        return Codes.GenericSuccess;
+                }
+            }
+            catch
+            {
+                Console.WriteLine("------------------- CRASH " + username + "----------------------");
+                return Codes.FamilyJoinRequestDeletionError;
             }
         }
 
