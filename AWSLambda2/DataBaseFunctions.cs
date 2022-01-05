@@ -62,7 +62,14 @@ namespace spazio
                                 if (reader.GetBoolean(loginVerId))
                                 {
                                     Dictionary<String, String> diz = new Dictionary<string, string>();
-                                    diz.Add("Picture", reader.GetInt32(iconId).ToString());
+                                    try
+                                    {
+                                        diz.Add("Picture", reader.GetInt32(iconId).ToString());
+                                    }
+                                    catch
+                                    {
+                                        diz.Add("Picture", "-1");
+                                    }
                                     if (this.User2Family(username).Result.TryGetValue("name", out string fam))
                                         diz.Add("Family", fam);
                                     return Tuple.Create(Codes.GenericSuccess, diz);
