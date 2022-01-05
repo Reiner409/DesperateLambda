@@ -334,18 +334,24 @@ namespace spazio
                 Console.WriteLine("------------------- RequestJoinFamily " + username + "----------------------");
 
                 if (!VerificaEsistenzaUser(username, conn).Result || family == null)
-                    return Codes.JoinFamilyError;
+                    return Codes.LoginGenericError;
 
-                if (!VerificaEsistenzaRichiesta(username, family, conn).Result)
+                Console.WriteLine("------------------- SuperatoTestEsistenzaUser " + username + " -------------------");
+
+                if (VerificaEsistenzaRichiesta(username, family, conn).Result)
                     return Codes.JoinFamilyRequestAlreadyExistsError;
 
-                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0} VALUES (@u, @id, @u_requesting)", requestJoinFamilyTable), conn))
+                Console.WriteLine("------------------- SuperatoTestEsistenzaRichiesta " + username + " -------------------");
+
+                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0} VALUES (@u, @id, @ureq)", requestJoinFamilyTable), conn))
                 {
                     cmd.Parameters.AddWithValue("u", username);
                     cmd.Parameters.AddWithValue("id", int.Parse(family));
-                    cmd.Parameters.AddWithValue("u_requesting", usernameRequesting);
+                    cmd.Parameters.AddWithValue("ureq", usernameRequesting);
                     await cmd.ExecuteNonQueryAsync();
                 }
+
+                Console.WriteLine("------------------- Inserita la richiesta di unione alla famiglia " + username + " -------------------");
 
                 string Evento = usernameRequesting + " ha invitato " + username + " ad unirsi alla vostra famiglia";
                 await CreateLogAsync(usernameRequesting, Evento, conn);
@@ -781,6 +787,7 @@ namespace spazio
 
         private async Task<Boolean> VerificaEsistenzaUser(string username, NpgsqlConnection conn)
         {
+            Console.WriteLine("------------------- VerificaEsistenzaUser " + username + " -------------------");
             try
             {
                 await using (var cmd = new NpgsqlCommand(String.Format(
@@ -791,6 +798,7 @@ namespace spazio
             }
             catch
             {
+                Console.WriteLine("------------------- UserDoesNotExist " + username + " -------------------");
                 return false;
             }
         }
@@ -800,7 +808,7 @@ namespace spazio
             {
                 await using (var cmd = new NpgsqlCommand(String.Format(
                     "SELECT * FROM {0} WHERE username='{1}' AND id={2})",
-                    this.familyTable, username, family), conn))
+                    this.requestJoinFamilyTable, username, family), conn))
                 {
                     await using (var reader = await cmd.ExecuteReaderAsync())
                         return await reader.ReadAsync();
