@@ -239,6 +239,47 @@ namespace spazio
             }
         }
 
+        internal async Task<Codes> RequestJoinFamilyAsync(string username, string usernameRequesting, string family)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("------------------- RequestJoinFamily " + username + "----------------------");
+
+                if (!VerificaEsistenzaUser(username, conn).Result || family == null)
+                    return Codes.JoinFamilyError;
+
+                Console.WriteLine("------------------- SuperatoTestEsistenzaUser " + username + " -------------------");
+
+                if (VerificaEsistenzaRichiesta(username, family, conn).Result)
+                    return Codes.JoinFamilyRequestAlreadyExistsError;
+
+                Console.WriteLine("------------------- SuperatoTestEsistenzaRichiesta " + username + " -------------------");
+
+                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0} VALUES (@u, @id, @ureq)", requestJoinFamilyTable), conn))
+                {
+                    cmd.Parameters.AddWithValue("u", username);
+                    cmd.Parameters.AddWithValue("id", int.Parse(family));
+                    cmd.Parameters.AddWithValue("ureq", usernameRequesting);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                Console.WriteLine("------------------- Inserita la richiesta di unione alla famiglia " + username + " -------------------");
+
+                string Evento = usernameRequesting + " ha invitato " + username + " ad unirsi alla vostra famiglia";
+                await CreateLogAsync(usernameRequesting, Evento, conn);
+
+                return Codes.GenericSuccess;
+            }
+            catch
+            {
+                Console.WriteLine("------------------- CRASH " + username + "----------------------");
+                return Codes.JoinFamilyError;
+            }
+        }
+
         internal async Task<Codes> RefuseJoinFamilyAsync(string username, string family)
         {
             try
@@ -357,47 +398,6 @@ namespace spazio
             {
                 Console.WriteLine("------------------- CRASH " + username + "----------------------");
                 return Codes.FamilyCreationError;
-            }
-        }
-
-        internal async Task<Codes> RequestJoinFamilyAsync(string username, string usernameRequesting, string family)
-        {
-            try
-            {
-                await using var conn = new NpgsqlConnection(connString);
-                await conn.OpenAsync();
-
-                Console.WriteLine("------------------- RequestJoinFamily " + username + "----------------------");
-
-                if (!VerificaEsistenzaUser(username, conn).Result || family == null)
-                    return Codes.JoinFamilyError;
-
-                Console.WriteLine("------------------- SuperatoTestEsistenzaUser " + username + " -------------------");
-
-                if (VerificaEsistenzaRichiesta(username, family, conn).Result)
-                    return Codes.JoinFamilyRequestAlreadyExistsError;
-
-                Console.WriteLine("------------------- SuperatoTestEsistenzaRichiesta " + username + " -------------------");
-
-                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0} VALUES (@u, @id, @ureq)", requestJoinFamilyTable), conn))
-                {
-                    cmd.Parameters.AddWithValue("u", username);
-                    cmd.Parameters.AddWithValue("id", int.Parse(family));
-                    cmd.Parameters.AddWithValue("ureq", usernameRequesting);
-                    await cmd.ExecuteNonQueryAsync();
-                }
-
-                Console.WriteLine("------------------- Inserita la richiesta di unione alla famiglia " + username + " -------------------");
-
-                string Evento = usernameRequesting + " ha invitato " + username + " ad unirsi alla vostra famiglia";
-                await CreateLogAsync(usernameRequesting, Evento, conn);
-
-                return Codes.GenericSuccess;
-            }
-            catch
-            {
-                Console.WriteLine("------------------- CRASH " + username + "----------------------");
-                return Codes.JoinFamilyError;
             }
         }
 
@@ -828,7 +828,7 @@ namespace spazio
             {
                 await using (var cmd = new NpgsqlCommand(String.Format(
                     "SELECT * FROM {0} WHERE username='{1}'",
-                    this.taskTable, username), conn))
+                    this.loginTable, username), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                     return (await reader.ReadAsync());
             }
