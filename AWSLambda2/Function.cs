@@ -76,9 +76,9 @@ namespace AWSLambda2
             try
             {
 
-                Task<Codes> codice = funzioniDatabase.LoginAsync(userID, password);
+                Tuple<Codes,Dictionary<String,String>> codice = funzioniDatabase.LoginAsync(userID, password).Result;
 
-                return ResponseLogin(codice.Result);
+                return ResponseLogin(codice);
             }
             catch
             {
@@ -251,19 +251,17 @@ namespace AWSLambda2
             };
         }
 
-        private APIGatewayProxyResponse ResponseLogin(Codes code)
+        private APIGatewayProxyResponse ResponseLogin(Tuple<Codes, Dictionary<String, String>> resp)
         {
 
-            GestioneCodici gestione = new GestioneCodici();
-
-            if ((int)code < 10)
+            if (((int)resp.Item1) ==200)
                 return new APIGatewayProxyResponse
                 {
                     StatusCode = 200,
-                    Body = ((int)code).ToString()
+                    Body = JsonSerializer.Serialize(resp.Item2)
                 };
             else
-                return Response(code);
+                return Response(resp.Item1);
         }
     }
 }

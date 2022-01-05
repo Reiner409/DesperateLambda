@@ -28,7 +28,7 @@ namespace spazio
         int pwId = 1;
         int emId = 2;
         int loginVerId = 3;
-        int iconId= 5;
+        int iconId = 5;
 
         int taskCatId = 1;
         int taskNameId = 2;
@@ -43,7 +43,7 @@ namespace spazio
         int medalNameId = 1;
         int medalQuantityId = 2;
 
-        public async Task<Codes> LoginAsync(string username, string password)
+        public async Task<Tuple<Codes, Dictionary<String, String>>> LoginAsync(string username, string password)
         {
             try
             {
@@ -60,21 +60,27 @@ namespace spazio
                         {
                             if (reader.GetString(usId).Equals(username) && reader.GetString(pwId).Equals(password))
                                 if (reader.GetBoolean(loginVerId))
-                                    return (Codes)reader.GetInt32(iconId);
+                                {
+                                    Dictionary<String, String> diz = new Dictionary<string, string>();
+                                    diz.Add("Picture", reader.GetInt32(iconId).ToString());
+                                    if (this.User2Family(username).Result.TryGetValue("name", out string fam))
+                                        diz.Add("Family", fam);
+                                    return Tuple.Create(Codes.GenericSuccess, diz);
+                                }
                                 else
-                                    return Codes.LoginVerificationError;
+                                    return Tuple.Create(Codes.LoginVerificationError, new Dictionary<String, String>());
                             else
-                                return Codes.LoginUserPasswordError;
+                                return Tuple.Create(Codes.LoginUserPasswordError, new Dictionary<String, String>());
                         }
                     }
 
-                    return Codes.LoginUserNotExists;
+                    return Tuple.Create(Codes.LoginUserNotExists, new Dictionary<String, String>());
                 }
             }
             catch
             {
                 Console.WriteLine("-------------------CRASH " + username + "----------------------");
-                return Codes.LoginGenericError;
+                return Tuple.Create(Codes.LoginGenericError, new Dictionary<String, String>());
             }
         }
 
@@ -127,7 +133,7 @@ namespace spazio
                 if (User2Family(user).Result.TryGetValue("id", out string family))
                     user = family;
 
-                    await using var conn = new NpgsqlConnection(connString);
+                await using var conn = new NpgsqlConnection(connString);
                 await conn.OpenAsync();
                 List<LogClass> lista = new List<LogClass>();
 
@@ -260,7 +266,7 @@ namespace spazio
                 }
 
                 string Evento = username + " si è aggiunto alla famiglia!";
-                await CreateLogAsync (username, Evento, conn);
+                await CreateLogAsync(username, Evento, conn);
 
                 return Codes.GenericSuccess;
             }
