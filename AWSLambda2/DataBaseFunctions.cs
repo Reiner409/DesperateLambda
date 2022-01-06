@@ -729,7 +729,14 @@ namespace spazio
             {
                 FamilyMember tmp = new FamilyMember();
                 tmp.Username = reader.GetString(0);
-                tmp.Picture = reader.GetInt32(1);
+                try
+                {
+                    tmp.Picture = reader.GetInt32(1);
+                }
+                catch
+                {
+                    tmp.Picture = -1;
+                }
                 lista.Add(tmp);
             }
             return lista;
