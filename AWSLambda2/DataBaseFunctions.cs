@@ -58,7 +58,7 @@ namespace spazio
                     if (await reader.ReadAsync())
                     {
                         {
-                            if (reader.GetString(usId).Equals(username) && reader.GetString(pwId).Equals(password))
+                            if (reader.GetString(usId).Equals(username) && reader.GetString(pwId).Equals(EncDec.EncryptionHelper.Encrypt(username, password)))
                                 if (reader.GetBoolean(loginVerId))
                                 {
                                     Dictionary<String, String> diz = new Dictionary<string, string>();
@@ -101,25 +101,18 @@ namespace spazio
                 Console.WriteLine("-------------------REGISTER " + username + "----------------------");
 
                 if (!MailVerificata(email))
-                {
                     return Codes.RegistrationEmailNotValid;
-                }
-
+                if (await VerificaEsistenzaMail(email, conn))
+                    return Codes.RegistrationEmailExistsError;
                 if (VerificaEsistenzaUser(username, conn).Result)
                     return Codes.RegistrationUserExistsError;
 
-                await using (var cmd = new NpgsqlCommand(String.Format("SELECT * FROM {0} WHERE email='{1}'", loginTable, email), conn))
-                await using (var reader = await cmd.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                        if (reader.GetString(emId).Equals(email))
-                            return Codes.RegistrationEmailExistsError;
-                }
+
 
                 await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@u, @p, @e, @v)", loginTable), conn))
                 {
                     cmd.Parameters.AddWithValue("u", username);
-                    cmd.Parameters.AddWithValue("p", password);
+                    cmd.Parameters.AddWithValue("p", EncDec.EncryptionHelper.Encrypt(username, password));
                     cmd.Parameters.AddWithValue("e", email);
                     cmd.Parameters.AddWithValue("v", false);
                     await cmd.ExecuteNonQueryAsync();
@@ -132,6 +125,7 @@ namespace spazio
                 return Codes.RegistrationError;
             }
         }
+
 
         internal async Task<List<LogClass>> GetLog(string user, int numero = 10)
         {
@@ -855,6 +849,22 @@ namespace spazio
                 {
                     await using (var reader = await cmd.ExecuteReaderAsync())
                         return await reader.ReadAsync();
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task<bool> VerificaEsistenzaMail(string email, NpgsqlConnection conn)
+        {
+            try
+            {
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT * FROM {0} WHERE email='{1}'", loginTable, email), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    return await reader.ReadAsync();
                 }
             }
             catch
