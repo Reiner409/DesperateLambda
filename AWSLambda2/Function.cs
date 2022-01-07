@@ -18,6 +18,7 @@ namespace AWSLambda2
         readonly string username = "u";
         readonly string password = "p";
         readonly string email = "e";
+        readonly string token = "token";
 
         readonly string family = "family";
         readonly string usernameToJoinFamily = "u2";
@@ -39,8 +40,12 @@ namespace AWSLambda2
 
                 if (operation.Equals("login"))
                     return Login(request, context);
+
                 if (operation.Equals("register"))
                     return Register(request, context);
+                
+                if (operation.Equals("verify"))
+                    return Verify(request, context);
 
                 if (operation.EndsWith("Family"))
                     return Family(request, context, operation);
@@ -97,6 +102,25 @@ namespace AWSLambda2
             Task<Codes> codice = funzioniDatabase.RegisterAsync(userID, password, email);
 
             return Response(codice.Result);
+        }
+        
+        private APIGatewayProxyResponse Verify(APIGatewayProxyRequest request, ILambdaContext context)
+        {
+            IDictionary<string, string> dizionario = request.QueryStringParameters;
+            dizionario.TryGetValue(this.token, out string token);
+
+            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            Task<Codes> codice = funzioniDatabase.VerifyUserAsync(token);
+
+            switch ((int)codice.Result)
+            {
+                case 200:
+                    return Response(200, "Account verificato con successo!");
+                case 499:
+                    return Response(499, "Richiesta non esistente");
+                default:
+                    return Response(400, "An unexpected error occured. Please try later");
+            }
         }
 
         private APIGatewayProxyResponse Log(APIGatewayProxyRequest request, ILambdaContext context, string operation)
@@ -254,6 +278,15 @@ namespace AWSLambda2
             {
                 StatusCode = codice,
                 Body = gestione.CodeToText(codice)
+            };
+        }
+        private APIGatewayProxyResponse Response(int code, string message)
+        {
+
+            return new APIGatewayProxyResponse
+            {
+                StatusCode = code,
+                Body = message
             };
         }
 

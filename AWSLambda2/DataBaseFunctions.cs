@@ -107,14 +107,17 @@ namespace spazio
                 if (VerificaEsistenzaUser(username, conn).Result)
                     return Codes.RegistrationUserExistsError;
 
+                string token = await EmailFunctions.inviaEmailVerifica(email, username);
 
-
-                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@u, @p, @e, @v)", loginTable), conn))
+                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @pw, @em, @ver,@fam,@pic,@tok)", loginTable), conn))
                 {
-                    cmd.Parameters.AddWithValue("u", username);
-                    cmd.Parameters.AddWithValue("p", EncDec.EncryptionHelper.Encrypt(username, password));
-                    cmd.Parameters.AddWithValue("e", email);
-                    cmd.Parameters.AddWithValue("v", false);
+                    cmd.Parameters.AddWithValue("us", username);
+                    cmd.Parameters.AddWithValue("pw", EncDec.EncryptionHelper.Encrypt(username, password));
+                    cmd.Parameters.AddWithValue("em", email);
+                    cmd.Parameters.AddWithValue("ver", false);
+                    cmd.Parameters.AddWithValue("fam", DBNull.Value);
+                    cmd.Parameters.AddWithValue("pic", -1);
+                    cmd.Parameters.AddWithValue("tok", token);
                     await cmd.ExecuteNonQueryAsync();
                 }
                 return Codes.GenericSuccess;
@@ -125,6 +128,34 @@ namespace spazio
                 return Codes.RegistrationError;
             }
         }
+
+        internal async Task<Codes> VerifyUserAsync(string token)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("-------------------VerifyUser----------------------");
+
+                if (!await verificaEsistenzaToken(token, conn))
+                    return Codes.GenericError;
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                    "UPDATE {0} SET verifica='true', token=NULL WHERE token='{1}'",
+                    this.loginTable, token), conn))
+
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                    return Codes.GenericSuccess;
+
+            }
+            catch
+            {
+                Console.WriteLine("-------------------CRASH----------------------");
+                return Codes.LoginVerificationError;
+            }
+        }
+
 
 
         internal async Task<List<LogClass>> GetLog(string user, int numero = 10)
@@ -550,6 +581,7 @@ namespace spazio
 
                 if (VerificaEsistenzaTask(username, taskName, taskCategory, taskDate, taskDescription, conn).Result)
                     return Codes.TaskExistsError;
+
                 await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@u, @c, @n, @t, @d, @v, @cu)", taskTable), conn))
                 {
                     cmd.Parameters.AddWithValue("u", username);
@@ -734,6 +766,24 @@ namespace spazio
                 lista.Add(tmp);
             }
             return lista;
+        }
+
+        private async Task<Boolean> verificaEsistenzaToken(string token, NpgsqlConnection conn)
+        {
+            try
+            {
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                    "SELECT * FROM {0} WHERE token='{1}'",
+                    this.loginTable, token), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    return await reader.ReadAsync();
+                }
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private async Task<Boolean> VerificaEsistenzaTask(string username, string name, string category, string date, string description, NpgsqlConnection conn)
