@@ -22,6 +22,8 @@ namespace AWSLambda2
 
         readonly string family = "family";
         readonly string usernameToJoinFamily = "u2";
+        readonly string start = "start";
+        readonly string end = "end";
 
         readonly string taskName = "taskName";
         readonly string taskCategory = "taskCategory";
@@ -43,7 +45,7 @@ namespace AWSLambda2
 
                 if (operation.Equals("register"))
                     return Register(request, context);
-                
+
                 if (operation.Equals("verify"))
                     return Verify(request, context);
 
@@ -81,7 +83,7 @@ namespace AWSLambda2
             try
             {
 
-                Tuple<Codes,Dictionary<String,String>> codice = funzioniDatabase.LoginAsync(userID, password).Result;
+                Tuple<Codes, Dictionary<String, String>> codice = funzioniDatabase.LoginAsync(userID, password).Result;
 
                 return ResponseLogin(codice);
             }
@@ -103,7 +105,7 @@ namespace AWSLambda2
 
             return Response(codice.Result);
         }
-        
+
         private APIGatewayProxyResponse Verify(APIGatewayProxyRequest request, ILambdaContext context)
         {
             IDictionary<string, string> dizionario = request.QueryStringParameters;
@@ -186,10 +188,15 @@ namespace AWSLambda2
                 family = null;
             }
 
+            if (operation.Equals("getTasksFamily"))
+            {
+                dizionario.TryGetValue(this.start, out string sPeriod);
+                dizionario.TryGetValue(this.end, out string ePeriod);
+                return Response(funzioniDatabase.GetTasksFamilyMethodAsync(username, family, sPeriod, ePeriod).Result);
+            }
+
             switch (operation)
             {
-                case "getTasksFamily":
-                    return Response(funzioniDatabase.GetTasksFamilyMethodAsync(username, family).Result);
                 case "getMedalsFamily":
                     return Response(funzioniDatabase.GetMedalFamilyMethodAsync(username, family).Result);
                 case "getFamily":
@@ -293,7 +300,7 @@ namespace AWSLambda2
         private APIGatewayProxyResponse ResponseLogin(Tuple<Codes, Dictionary<String, String>> resp)
         {
 
-            if (((int)resp.Item1) ==200)
+            if (((int)resp.Item1) == 200)
                 return new APIGatewayProxyResponse
                 {
                     StatusCode = 200,

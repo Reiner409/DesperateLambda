@@ -15,7 +15,7 @@ namespace spazio
     {
         private string connString =
             String.Format("Host={0};Username={1};Password={2};Database={3};Port={4}",
-                                   "151.24.14.109", "postgres", "123", "Datas", "5432");
+                                   "151.24.29.32", "postgres", "123", "Datas", "5432");
 
         String loginTable = "login";
         String taskTable = "tasks";
@@ -192,10 +192,14 @@ namespace spazio
 
 
 
-        internal async Task<List<TaskClass>> GetTasksFamilyMethodAsync(string username, string family)
+        internal async Task<List<TaskClass>> GetTasksFamilyMethodAsync(string username, string family, string startingPeriod, string endingPeriod)
         {
+            String modificaFamiglia;
+
             if (family == null)
-                return GetEveryTaskMethodAsync(username).Result;
+                modificaFamiglia = String.Format("username = '{0}'", username);
+            else
+                modificaFamiglia = String.Format("famiglia = {0}", family);
 
             try
             {
@@ -204,22 +208,33 @@ namespace spazio
 
                 Console.WriteLine("------------------- GetTasksFamily " + username + family + "----------------------");
 
-                List<string> listaFamiliari = await GetListaFamiliari(family, conn);
-
-                List<TaskClass> listaCompiti = new List<TaskClass>();
-
-                foreach (string user in listaFamiliari)
-                {
-                    listaCompiti = listaCompiti.Concat(GetEveryTaskMethodAsync(user).Result).ToList();
-                }
-
-                return listaCompiti;
+                await using (var cmd = new NpgsqlCommand(
+                    String.Format("Select login.username,categoria,tasks.nome,data,descrizione,tasks.verifica,personalizzata FROM " +
+                                            "login JOIN famiglia ON famiglia = id JOIN tasks ON login.username = tasks.username " +
+                                            "WHERE {0} AND data > '{1}' AND data < '{2}' " +
+                                            "ORDER BY DATA DESC", modificaFamiglia, startingPeriod, endingPeriod), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                    return await CreazioneListaTasks(reader);
             }
             catch
             {
                 Console.WriteLine("------------------- CRASH " + username + "----------------------");
                 return null;
             }
+        }
+
+
+        internal TaskClass creazioneTask(NpgsqlDataReader reader)
+        {
+            TaskClass tmp = new TaskClass();
+            tmp.user = reader.GetString(usId);
+            tmp.name = reader.GetString(taskNameId);
+            tmp.category = reader.GetString(taskCatId);
+            tmp.date = reader.GetDateTime(taskDateId);
+            tmp.description = reader.GetString(taskDescrId);
+            tmp.verified = reader.GetBoolean(taskVerId);
+            tmp.custom = reader.GetBoolean(taskCustomId);
+            return tmp;
         }
 
         internal async Task<List<FamilyMember>> GetFamily(string username, string family)
@@ -708,15 +723,7 @@ namespace spazio
             List<TaskClass> lista = new List<TaskClass>();
             while (await reader.ReadAsync())
             {
-                TaskClass tmp = new TaskClass();
-                tmp.user = reader.GetString(usId);
-                tmp.name = reader.GetString(taskNameId);
-                tmp.category = reader.GetString(taskCatId);
-                tmp.date = reader.GetDateTime(taskDateId);
-                tmp.description = reader.GetString(taskDescrId);
-                tmp.verified = reader.GetBoolean(taskVerId);
-                tmp.custom = reader.GetBoolean(taskCustomId);
-                lista.Add(tmp);
+                lista.Add(creazioneTask(reader));
             }
             return lista;
         }
