@@ -13,6 +13,5 @@ namespace desperate_houseworks_project.Models
         public string user { get; set; }
         public DateTime date { get; set; }
         public Boolean verified { get; set; }
-        public Boolean custom;
     }
 }

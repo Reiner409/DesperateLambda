@@ -35,7 +35,6 @@ namespace spazio
         int taskDateId = 3;
         int taskDescrId = 4;
         int taskVerId = 5;
-        int taskCustomId = 6;
 
         int familyId = 0;
         int familyNameId = 1;
@@ -233,7 +232,7 @@ namespace spazio
             tmp.date = reader.GetDateTime(taskDateId);
             tmp.description = reader.GetString(taskDescrId);
             tmp.verified = reader.GetBoolean(taskVerId);
-            tmp.custom = reader.GetBoolean(taskCustomId);
+
             return tmp;
         }
 
