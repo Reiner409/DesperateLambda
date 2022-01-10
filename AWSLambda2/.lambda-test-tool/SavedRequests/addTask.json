@@ -3,10 +3,9 @@
     "u":"pippo",
     "taskCategory": "Cucina",
     "taskName": "lavatrice",
-    "taskTime": "1998-01-01 23:59:59",
+    "taskTime": "2022-01-10 08:51:24",
      "taskDescription": "Ciao faccio la lavatrice",
-     "taskDone": "true",
-     "taskCustom": "true",
+     "taskDone": "false",
     "operation" : "addTask"
   }
 }

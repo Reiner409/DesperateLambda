@@ -208,7 +208,7 @@ namespace spazio
                 Console.WriteLine("------------------- GetTasksFamily " + username + family + "----------------------");
 
                 await using (var cmd = new NpgsqlCommand(
-                    String.Format("Select login.username,categoria,tasks.nome,data,descrizione,tasks.verifica,personalizzata FROM " +
+                    String.Format("Select login.username,categoria,tasks.nome,data,descrizione,tasks.verifica FROM " +
                                             "login JOIN famiglia ON famiglia = id JOIN tasks ON login.username = tasks.username " +
                                             "WHERE {0} AND data > '{1}' AND data < '{2}' " +
                                             "ORDER BY DATA DESC", modificaFamiglia, startingPeriod, endingPeriod), conn))
@@ -581,8 +581,7 @@ namespace spazio
 
         internal async Task<Codes> AddTasksMethodAsync(string username, string taskName,
                                                                string taskCategory, string taskDate,
-                                                               string taskDescription, string taskDone,
-                                                               string taskCustom)
+                                                               string taskDescription, string taskDone)
         {
             try
             {
@@ -596,7 +595,7 @@ namespace spazio
                 if (VerificaEsistenzaTask(username, taskName, taskCategory, taskDate, taskDescription, conn).Result)
                     return Codes.TaskExistsError;
 
-                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@u, @c, @n, @t, @d, @v, @cu)", taskTable), conn))
+                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@u, @c, @n, @t, @d, @v)", taskTable), conn))
                 {
                     cmd.Parameters.AddWithValue("u", username);
                     cmd.Parameters.AddWithValue("c", taskCategory);
@@ -604,7 +603,6 @@ namespace spazio
                     cmd.Parameters.AddWithValue("t", DateTime.Parse(taskDate));
                     cmd.Parameters.AddWithValue("d", taskDescription);
                     cmd.Parameters.AddWithValue("v", Boolean.Parse(taskDone));
-                    cmd.Parameters.AddWithValue("cu", Boolean.Parse(taskCustom));
                     await cmd.ExecuteNonQueryAsync();
                 }
                 return Codes.GenericSuccess;

@@ -30,7 +30,6 @@ namespace AWSLambda2
         readonly string taskDescription = "taskDescription";
         readonly string taskTime = "taskTime";
         readonly string taskDone = "taskDone";
-        readonly string taskCustom = "taskCustom";
 
         readonly string numeroLog = "numeroLog";
 
@@ -237,12 +236,11 @@ namespace AWSLambda2
             dizionario.TryGetValue(this.taskTime, out string taskT);
             dizionario.TryGetValue(this.taskDescription, out string taskDescr);
             dizionario.TryGetValue(this.taskDone, out string taskDone);
-            dizionario.TryGetValue(this.taskCustom, out string taskPers);
 
             switch (operation)
             {
                 case "addTask":
-                    return Response((funzioniDatabase.AddTasksMethodAsync(username, taskN, taskC, taskT, taskDescr, taskDone, taskPers).Result));
+                    return Response((funzioniDatabase.AddTasksMethodAsync(username, taskN, taskC, taskT, taskDescr, taskDone).Result));
                 case "removeTask":
                     return Response((funzioniDatabase.RemoveTasksMethodAsync(username, taskN, taskC, taskT, taskDescr, taskDone).Result));
                 case "updateVerTask":
