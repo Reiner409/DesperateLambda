@@ -193,12 +193,15 @@ namespace spazio
 
         internal async Task<List<TaskClass>> GetTasksFamilyMethodAsync(string username, string family, string startingPeriod, string endingPeriod)
         {
-            String modificaFamiglia;
-
+            String modificaFamiglia1=" ";
+            String modificaFamiglia2;
             if (family == null)
-                modificaFamiglia = String.Format("username = '{0}'", username);
+                modificaFamiglia2 = String.Format("login.username = '{0}'", username);
             else
-                modificaFamiglia = String.Format("famiglia = {0}", family);
+            {
+                modificaFamiglia1 = " famiglia ON famiglia = id JOIN ";
+                modificaFamiglia2 = String.Format("famiglia = {0}", family);
+            }
 
             try
             {
@@ -209,9 +212,9 @@ namespace spazio
 
                 await using (var cmd = new NpgsqlCommand(
                     String.Format("Select login.username,categoria,tasks.nome,data,descrizione,tasks.verifica FROM " +
-                                            "login JOIN famiglia ON famiglia = id JOIN tasks ON login.username = tasks.username " +
-                                            "WHERE {0} AND data > '{1}' AND data < '{2}' " +
-                                            "ORDER BY DATA DESC", modificaFamiglia, startingPeriod, endingPeriod), conn))
+                                            "login JOIN {0} tasks ON login.username = tasks.username " +
+                                            "WHERE {1} AND data > '{2}' AND data < '{3}' " +
+                                            "ORDER BY DATA DESC",modificaFamiglia1, modificaFamiglia2, startingPeriod, endingPeriod), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                     return await CreazioneListaTasks(reader);
             }
