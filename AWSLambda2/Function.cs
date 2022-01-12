@@ -19,6 +19,7 @@ namespace AWSLambda2
         readonly string password = "p";
         readonly string email = "e";
         readonly string token = "token";
+        readonly string token_auth = "token_auth";
 
         readonly string family = "family";
         readonly string usernameToJoinFamily = "u2";
@@ -41,6 +42,9 @@ namespace AWSLambda2
 
                 if (operation.Equals("login"))
                     return Login(request, context);
+                
+                if (operation.Equals("login2"))
+                    return Login2(request, context);
 
                 if (operation.Equals("register"))
                     return Register(request, context);
@@ -68,6 +72,7 @@ namespace AWSLambda2
             }
         }
 
+        
 
         private APIGatewayProxyResponse Login(APIGatewayProxyRequest request, ILambdaContext context)
 
@@ -83,6 +88,26 @@ namespace AWSLambda2
             {
 
                 Tuple<Codes, Dictionary<String, String>> codice = funzioniDatabase.LoginAsync(userID, password).Result;
+
+                return ResponseLogin(codice);
+            }
+            catch
+            {
+                return Response(Codes.DatabaseConnectionError);
+            }
+        }
+
+        private APIGatewayProxyResponse Login2(APIGatewayProxyRequest request, ILambdaContext context)
+        {
+            IDictionary<string, string> dizionario = request.QueryStringParameters;
+            dizionario.TryGetValue(this.token, out string token);
+
+
+            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            try
+            {
+
+                Tuple<Codes, Dictionary<String, String>> codice = funzioniDatabase.Login2Async(token).Result;
 
                 return ResponseLogin(codice);
             }

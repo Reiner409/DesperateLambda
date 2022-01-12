@@ -29,6 +29,7 @@ namespace spazio
         int emId = 2;
         int loginVerId = 3;
         int iconId = 5;
+        int token_auth_Id = 7;
 
         int taskCatId = 1;
         int taskNameId = 2;
@@ -61,14 +62,13 @@ namespace spazio
                                 if (reader.GetBoolean(loginVerId))
                                 {
                                     Dictionary<String, String> diz = new Dictionary<string, string>();
-                                    try
-                                    {
-                                        diz.Add("Picture", reader.GetInt32(iconId).ToString());
-                                    }
-                                    catch
-                                    {
-                                        diz.Add("Picture", "-1");
-                                    }
+
+                                    try { diz.Add("Picture", reader.GetInt32(iconId).ToString()); }
+                                    catch { diz.Add("Picture", "-1"); }
+
+                                    try { diz.Add("Token", reader.GetString(token_auth_Id).ToString()); }
+                                    catch { diz.Add("Token", await this.RefreshAuthToken(username)); }
+
                                     if (this.User2Family(username).Result.TryGetValue("name", out string fam))
                                         diz.Add("Family", fam);
                                     return Tuple.Create(Codes.GenericSuccess, diz);
@@ -88,6 +88,64 @@ namespace spazio
                 Console.WriteLine("-------------------CRASH " + username + "----------------------");
                 return Tuple.Create(Codes.LoginGenericError, new Dictionary<String, String>());
             }
+        }
+
+        public async Task<Tuple<Codes, Dictionary<String, String>>> Login2Async(string token)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("-------------------LOGIN----------------------");
+
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT * FROM {0} WHERE token_auth='{1}'", loginTable, token), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+
+                        Dictionary<String, String> diz = new Dictionary<string, string>();
+
+                        string username = reader.GetString(usId).ToString();
+
+                        try { diz.Add("Picture", reader.GetInt32(iconId).ToString()); }
+                        catch { diz.Add("Picture", "-1"); }
+
+                        if (this.User2Family(username).Result.TryGetValue("name", out string fam))
+                            diz.Add("Family", fam);
+                        return Tuple.Create(Codes.GenericSuccess, diz);
+                    }
+                    return Tuple.Create(Codes.LoginTokenNotExists, new Dictionary<String, String>());
+                }
+            }
+            catch
+            {
+                Console.WriteLine("-------------------CRASH ----------------------");
+                return Tuple.Create(Codes.LoginGenericError, new Dictionary<String, String>());
+            }
+        }
+
+        public async Task<String> RefreshAuthToken(string username)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+                String token = generateToken(username);
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                        "UPDATE {0} SET token_auth='{1}' WHERE username='{2}'",
+                        this.loginTable, token, username), conn))
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                return token;
+            }
+            catch
+            {
+                return "";
+            }
+
         }
 
         public async Task<Codes> RegisterAsync(string username, string password, string email)
@@ -126,6 +184,11 @@ namespace spazio
                 Console.WriteLine("-------------------CRASH " + username + "----------------------");
                 return Codes.RegistrationError;
             }
+        }
+
+        private string generateToken(string user)
+        {
+            return EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString(), user);
         }
 
         internal async Task<Codes> VerifyUserAsync(string token)
@@ -193,8 +256,9 @@ namespace spazio
 
         internal async Task<List<TaskClass>> GetTasksFamilyMethodAsync(string username, string family, string startingPeriod, string endingPeriod)
         {
-            String modificaFamiglia1=" ";
+            String modificaFamiglia1 = " ";
             String modificaFamiglia2;
+
             if (family == null)
                 modificaFamiglia2 = String.Format("login.username = '{0}'", username);
             else
@@ -214,7 +278,7 @@ namespace spazio
                     String.Format("Select login.username,categoria,tasks.nome,data,descrizione,tasks.verifica FROM " +
                                             "login JOIN {0} tasks ON login.username = tasks.username " +
                                             "WHERE {1} AND data > '{2}' AND data < '{3}' " +
-                                            "ORDER BY DATA DESC",modificaFamiglia1, modificaFamiglia2, startingPeriod, endingPeriod), conn))
+                                            "ORDER BY DATA DESC", modificaFamiglia1, modificaFamiglia2, startingPeriod, endingPeriod), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                     return await CreazioneListaTasks(reader);
             }
@@ -270,8 +334,9 @@ namespace spazio
                 Console.WriteLine("-------------------GetJoinRequestsFamily" + username + "----------------------");
 
                 await using (var cmd = new NpgsqlCommand(
-                    String.Format("SELECT username_requesting, nome, {0}.id FROM {0} JOIN {1} ON {0}.id={1}.id WHERE username='{2}'",
-                    familyTable, requestJoinFamilyTable, username), conn))
+                    String.Format("SELECT username_requesting, nome, {0}.id, immagine FROM {0} JOIN {1} ON {0}.id={1}.id JOIN {2} ON " +
+                    "username_requesting={2}.username  WHERE {1}.username='{3}'",
+                    familyTable, requestJoinFamilyTable, loginTable, username), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                     return await CreazioneListaRequests(reader);
             }
@@ -751,6 +816,14 @@ namespace spazio
                 tmp.userAsking = reader.GetString(0);
                 tmp.familyName = reader.GetString(1);
                 tmp.familyCode = reader.GetInt16(2);
+                try
+                {
+                    tmp.Icon = reader.GetInt16(3);
+                }
+                catch
+                {
+                    tmp.Icon = -1;
+                }
                 lista.Add(tmp);
             }
             return lista;

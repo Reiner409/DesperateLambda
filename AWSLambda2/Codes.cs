@@ -16,7 +16,8 @@ namespace Codici
         LoginUserPasswordError = 400,
         LoginVerificationError = 401,
         LoginUserNotExists = 402,
-        LoginGenericError=409,
+        LoginTokenNotExists = 403,
+        LoginGenericError =409,
 
         //Registration
         //RegistrationSuccesful = 210,
@@ -56,6 +57,7 @@ namespace Codici
         DatabaseConnectionError = 491,
         ToBeAdded=498,
         GenericError = 499,
+        
     }
 
     class GestioneCodici
@@ -77,6 +79,8 @@ namespace Codici
                     return "Login - Missing verification";
                 case 402:
                     return "Login - User does not exists";
+                case 403:
+                    return "Login - Token does not exists";
                 case 409:
                     return "Login - Generic Error";
 

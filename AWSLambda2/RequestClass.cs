@@ -8,6 +8,7 @@ namespace AWSLambda2
     {
 
         public string userAsking { get; set; }
+        public int Icon { get; set; }
         public string familyName { get; set; }
         public int familyCode { get; set; }
     }
