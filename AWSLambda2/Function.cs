@@ -19,7 +19,7 @@ namespace AWSLambda2
         readonly string password = "p";
         readonly string email = "e";
         readonly string token = "token";
-        readonly string token_auth = "token_auth";
+        readonly string icon = "icon";
 
         readonly string family = "family";
         readonly string usernameToJoinFamily = "u2";
@@ -45,6 +45,9 @@ namespace AWSLambda2
                 
                 if (operation.Equals("login2"))
                     return Login2(request, context);
+
+                if (operation.Equals("icon"))
+                    return Icon(request, context);
 
                 if (operation.Equals("register"))
                     return Register(request, context);
@@ -117,6 +120,27 @@ namespace AWSLambda2
             }
         }
 
+        private APIGatewayProxyResponse Icon(APIGatewayProxyRequest request, ILambdaContext context)
+        {
+            IDictionary<string, string> dizionario = request.QueryStringParameters;
+            dizionario.TryGetValue(this.username, out string user);
+            dizionario.TryGetValue(this.icon, out string icon);
+
+
+            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            try
+            {
+
+                Codes codice = funzioniDatabase.UpdateUserIconAsync(user,icon).Result;
+
+                return Response(codice);
+            }
+            catch
+            {
+                return Response(Codes.DatabaseConnectionError);
+            }
+        }
+
         private APIGatewayProxyResponse Register(APIGatewayProxyRequest request, ILambdaContext context)
         {
             IDictionary<string, string> dizionario = request.QueryStringParameters;
@@ -157,7 +181,10 @@ namespace AWSLambda2
             dizionario.TryGetValue(this.username, out string userID);
 
             DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
-            try
+
+            return null;
+
+            /*try
             {
                 if (operation.Equals("getLog"))
                 {
@@ -172,7 +199,7 @@ namespace AWSLambda2
             catch
             {
                 return Response(Codes.DatabaseConnectionError);
-            }
+            }*/
         }
 
         private APIGatewayProxyResponse Family(APIGatewayProxyRequest request, ILambdaContext context, string operation)
@@ -267,9 +294,9 @@ namespace AWSLambda2
                 case "addTask":
                     return Response((funzioniDatabase.AddTasksMethodAsync(username, taskN, taskC, taskT, taskDescr, taskDone).Result));
                 case "removeTask":
-                    return Response((funzioniDatabase.RemoveTasksMethodAsync(username, taskN, taskC, taskT, taskDescr, taskDone).Result));
+                    return Response((funzioniDatabase.RemoveTasksMethodAsync(username, taskN, taskC, taskT).Result));
                 case "updateVerTask":
-                    return Response((funzioniDatabase.UpdateVerTasksMethodAsync(username, taskN, taskC, taskT, taskDescr, taskDone).Result));
+                    return Response((funzioniDatabase.UpdateVerTasksMethodAsync(username, taskN, taskC, taskT).Result));
                 default: return Response(Codes.GenericError);
             }
         }

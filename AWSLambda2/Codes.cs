@@ -17,6 +17,7 @@ namespace Codici
         LoginVerificationError = 401,
         LoginUserNotExists = 402,
         LoginTokenNotExists = 403,
+        UpdateUserIconError = 404,
         LoginGenericError =409,
 
         //Registration
@@ -81,6 +82,8 @@ namespace Codici
                     return "Login - User does not exists";
                 case 403:
                     return "Login - Token does not exists";
+                case 404:
+                    return "Icon - Couldn't update user icon";
                 case 409:
                     return "Login - Generic Error";
 

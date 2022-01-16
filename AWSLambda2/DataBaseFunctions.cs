@@ -37,6 +37,9 @@ namespace spazio
         int taskDescrId = 4;
         int taskVerId = 5;
 
+        int LogVerId = 4;
+        int LogIconId = 5;
+
         int familyId = 0;
         int familyNameId = 1;
 
@@ -148,6 +151,30 @@ namespace spazio
 
         }
 
+        internal async Task<Codes> UpdateUserIconAsync(string user, string icon)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                if (!VerificaEsistenzaUser(user, conn).Result)
+                    throw new Exception();
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                        "UPDATE {0} SET immagine={1} WHERE username='{2}'",
+                        this.loginTable, icon, user), conn))
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                return Codes.GenericSuccess;
+            }
+            catch
+            {
+                return Codes.UpdateUserIconError;
+            }
+        }
+
         public async Task<Codes> RegisterAsync(string username, string password, string email)
         {
             try
@@ -220,41 +247,41 @@ namespace spazio
 
 
 
-        internal async Task<List<LogClass>> GetLog(string user, int numero = 10)
-        {
-            try
-            {
-                if (User2Family(user).Result.TryGetValue("id", out string family))
-                    user = family;
+        //internal async Task<List<LogClass>> GetLog(string user, int numero = 10)
+        //{
+        //    try
+        //    {
+        //        if (User2Family(user).Result.TryGetValue("id", out string family))
+        //            user = family;
 
-                await using var conn = new NpgsqlConnection(connString);
-                await conn.OpenAsync();
-                List<LogClass> lista = new List<LogClass>();
+        //        await using var conn = new NpgsqlConnection(connString);
+        //        await conn.OpenAsync();
+        //        List<LogClass> lista = new List<LogClass>();
 
-                Console.WriteLine("-------------------GetLastLogs " + user + "----------------------");
+        //        Console.WriteLine("-------------------GetLastLogs " + user + "----------------------");
 
-                await using (var cmd = new NpgsqlCommand(String.Format("SELECT evento, data FROM {0} WHERE id='{1}' ORDER BY data DESC LIMIT {2}", logTable, user, numero), conn))
-                await using (var reader = await cmd.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        LogClass tmp = new LogClass();
-                        tmp.log = reader.GetString(0);
-                        tmp.Data = reader.GetDateTime(1);
-                        lista.Add(tmp);
-                    }
-                    return lista;
-                }
-            }
-            catch
-            {
-                return null;
-            }
-        }
+        //        await using (var cmd = new NpgsqlCommand(String.Format("SELECT evento, data FROM {0} WHERE id='{1}' ORDER BY data DESC LIMIT {2}", logTable, user, numero), conn))
+        //        await using (var reader = await cmd.ExecuteReaderAsync())
+        //        {
+        //            while (await reader.ReadAsync())
+        //            {
+        //                LogClass tmp = new LogClass();
+        //                tmp.log = reader.GetString(0);
+        //                tmp.Data = reader.GetDateTime(1);
+        //                lista.Add(tmp);
+        //            }
+        //            return lista;
+        //        }
+        //    }
+        //    catch
+        //    {
+        //        return null;
+        //    }
+        //}
 
 
 
-        internal async Task<List<TaskClass>> GetTasksFamilyMethodAsync(string username, string family, string startingPeriod, string endingPeriod)
+        internal async Task<List<Log>> GetTasksFamilyMethodAsync(string username, string family, string startingPeriod, string endingPeriod)
         {
             String modificaFamiglia1 = " ";
             String modificaFamiglia2;
@@ -275,12 +302,12 @@ namespace spazio
                 Console.WriteLine("------------------- GetTasksFamily " + username + family + "----------------------");
 
                 await using (var cmd = new NpgsqlCommand(
-                    String.Format("Select login.username,categoria,tasks.nome,data,descrizione,tasks.verifica FROM " +
+                    String.Format("Select login.username,categoria,tasks.nome,data,tasks.verifica, immagine FROM " +
                                             "login JOIN {0} tasks ON login.username = tasks.username " +
                                             "WHERE {1} AND data > '{2}' AND data < '{3}' " +
                                             "ORDER BY DATA DESC", modificaFamiglia1, modificaFamiglia2, startingPeriod, endingPeriod), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
-                    return await CreazioneListaTasks(reader);
+                    return await CreazioneListaLogs(reader);
             }
             catch
             {
@@ -289,19 +316,6 @@ namespace spazio
             }
         }
 
-
-        internal TaskClass creazioneTask(NpgsqlDataReader reader)
-        {
-            TaskClass tmp = new TaskClass();
-            tmp.user = reader.GetString(usId);
-            tmp.name = reader.GetString(taskNameId);
-            tmp.category = reader.GetString(taskCatId);
-            tmp.date = reader.GetDateTime(taskDateId);
-            tmp.description = reader.GetString(taskDescrId);
-            tmp.verified = reader.GetBoolean(taskVerId);
-
-            return tmp;
-        }
 
         internal async Task<List<FamilyMember>> GetFamily(string username, string family)
         {
@@ -573,8 +587,7 @@ namespace spazio
         }
 
         internal async Task<Codes> UpdateVerTasksMethodAsync(string username, string taskName,
-                                                               string taskCategory, string taskDate,
-                                                               string taskDescription, string taskDone)
+                                                               string taskCategory, string taskDate)
         {
             try
             {
@@ -583,12 +596,12 @@ namespace spazio
 
                 Console.WriteLine("-------------------UpdateTask " + username + "----------------------");
 
-                if (!VerificaEsistenzaTask(username, taskName, taskCategory, taskDate, taskDescription, conn).Result)
+                if (!VerificaEsistenzaTask(username, taskName, taskCategory, taskDate, conn).Result)
                     return Codes.TaskDoesNotExistsError;
 
                 await using (var cmd = new NpgsqlCommand(String.Format(
-                    "UPDATE {0} SET verifica='true' WHERE username='{1}' AND categoria='{2}' AND nome='{3}' AND descrizione='{4}' AND data='{5}'",
-                    this.taskTable, username, taskCategory, taskName, taskDescription, taskDate), conn))
+                    "UPDATE {0} SET verifica='true' WHERE username='{1}' AND categoria='{2}' AND nome='{3}' AND AND data='{4}'",
+                    this.taskTable, username, taskCategory, taskName, taskDate), conn))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -619,8 +632,7 @@ namespace spazio
         }
 
         internal async Task<Codes> RemoveTasksMethodAsync(string username, string taskName,
-                                                                string taskCategory, string taskDate,
-                                                                string taskDescription, string taskDone)
+                                                                string taskCategory, string taskDate)
         {
             try
             {
@@ -629,7 +641,7 @@ namespace spazio
 
                 Console.WriteLine("-------------------RemoveTask " + username + "----------------------");
 
-                if (!VerificaEsistenzaTask(username, taskName, taskCategory, taskDate, taskDescription, conn).Result)
+                if (!VerificaEsistenzaTask(username, taskName, taskCategory, taskDate, conn).Result)
                     return Codes.TaskDoesNotExistsError;
 
                 await using (var cmd = new NpgsqlCommand(String.Format(
@@ -660,7 +672,7 @@ namespace spazio
                 taskDescription = taskDescription.Replace("'", " ");
                 taskName = taskName.Replace("'", " ");
 
-                if (VerificaEsistenzaTask(username, taskName, taskCategory, taskDate, taskDescription, conn).Result)
+                if (VerificaEsistenzaTask(username, taskName, taskCategory, taskDate, conn).Result)
                     return Codes.TaskExistsError;
 
                 await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@u, @c, @n, @t, @d, @v)", taskTable), conn))
@@ -792,6 +804,48 @@ namespace spazio
             }
             return lista;
         }
+        private async Task<List<Log>> CreazioneListaLogs(NpgsqlDataReader reader)
+        {
+            List<Log> lista = new List<Log>();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(creazioneLog(reader));
+            }
+            return lista;
+        }
+
+        internal TaskClass creazioneTask(NpgsqlDataReader reader)
+        {
+            TaskClass tmp = new TaskClass();
+            tmp.user = reader.GetString(usId);
+            tmp.name = reader.GetString(taskNameId);
+            tmp.category = reader.GetString(taskCatId);
+            tmp.date = reader.GetDateTime(taskDateId);
+            tmp.description = reader.GetString(taskDescrId);
+            tmp.verified = reader.GetBoolean(taskVerId);
+
+            return tmp;
+        }
+
+        internal Log creazioneLog(NpgsqlDataReader reader)
+        {
+            Log tmp = new Log();
+            tmp.User = reader.GetString(usId);
+            tmp.Name = reader.GetString(taskNameId);
+            tmp.Category = reader.GetString(taskCatId);
+            tmp.date = reader.GetDateTime(taskDateId);
+            tmp.verified = reader.GetBoolean(LogVerId);
+            try
+            {
+                tmp.iconUser = reader.GetInt16(LogIconId);
+            }
+            catch
+            {
+                tmp.iconUser = -1;
+            }
+
+            return tmp;
+        }
 
         private async Task<List<MedalClass>> CreazioneListaMedals(NpgsqlDataReader reader)
         {
@@ -866,13 +920,13 @@ namespace spazio
             }
         }
 
-        private async Task<Boolean> VerificaEsistenzaTask(string username, string name, string category, string date, string description, NpgsqlConnection conn)
+        private async Task<Boolean> VerificaEsistenzaTask(string username, string name, string category, string date, NpgsqlConnection conn)
         {
             try
             {
                 await using (var cmd = new NpgsqlCommand(String.Format(
-                    "SELECT * FROM {0} WHERE username='{1}' AND categoria='{2}' AND nome='{3}' AND descrizione='{4}' AND data='{5}'",
-                    this.taskTable, username, category, name, description, date), conn))
+                    "SELECT * FROM {0} WHERE username='{1}' AND categoria='{2}' AND nome='{3}' AND data='{4}'",
+                    this.taskTable, username, category, name, date), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     return await reader.ReadAsync();

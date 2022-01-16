@@ -1,0 +1,7 @@
+{
+  "QueryStringParameters": {
+    "u": "pippo",
+    "icon": "2",
+    "operation" : "icon"
+  }
+}

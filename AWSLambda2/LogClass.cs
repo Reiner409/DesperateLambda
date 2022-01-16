@@ -4,9 +4,13 @@ using System.Text;
 
 namespace AWSLambda2
 {
-    class LogClass
+    public class Log
     {
-        public DateTime Data { get; set; }
-        public String log { get; set; }
+        public int iconUser { get; set; }
+        public string User { get; set; }
+        public DateTime date { get; set; }
+        public string Category { get; set; }
+        public string Name { get; set; }
+        public bool verified { get; set; }
     }
 }
