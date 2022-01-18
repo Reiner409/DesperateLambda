@@ -1,6 +1,5 @@
 ﻿using AWSLambda2;
 using Codici;
-using desperate_houseworks_project.Models;
 using Npgsql;
 using System;
 using System.Collections.Generic;
@@ -8,7 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace spazio
+namespace classi
 {
 
     class DataBaseFunctions
@@ -175,6 +174,30 @@ namespace spazio
             }
         }
 
+        internal async Task<Codes> UpdateUserNameAsync(string user, string name)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                if (!VerificaEsistenzaUser(user, conn).Result)
+                    throw new Exception();
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                        "UPDATE {0} SET name='{1}' WHERE username='{2}'",
+                        this.loginTable, name, user), conn))
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                return Codes.GenericSuccess;
+            }
+            catch
+            {
+                return Codes.UpdateUserNameError;
+            }
+        }
+
         public async Task<Codes> RegisterAsync(string username, string password, string email)
         {
             try
@@ -191,7 +214,7 @@ namespace spazio
                 if (VerificaEsistenzaUser(username, conn).Result)
                     return Codes.RegistrationUserExistsError;
 
-                string token = await EmailFunctions.inviaEmailVerifica(email, username);
+                string token = await EmailFunctions.InviaEmailVerifica(email, username);
 
                 await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @pw, @em, @ver,@fam,@pic,@tok)", loginTable), conn))
                 {
@@ -830,20 +853,21 @@ namespace spazio
         internal Log creazioneLog(NpgsqlDataReader reader)
         {
             Log tmp = new Log();
-            tmp.User = reader.GetString(usId);
+            FamilyMember tmpMember = new FamilyMember();
+            tmpMember.Username = reader.GetString(usId);
             tmp.Name = reader.GetString(taskNameId);
             tmp.Category = reader.GetString(taskCatId);
             tmp.date = reader.GetDateTime(taskDateId);
             tmp.verified = reader.GetBoolean(LogVerId);
             try
             {
-                tmp.iconUser = reader.GetInt16(LogIconId);
+                tmpMember.Picture = reader.GetInt16(LogIconId);
             }
             catch
             {
-                tmp.iconUser = -1;
+                tmpMember.Picture = -1;
             }
-
+            tmp.User = tmpMember;
             return tmp;
         }
 
@@ -867,16 +891,17 @@ namespace spazio
             while (await reader.ReadAsync())
             {
                 RequestClass tmp = new RequestClass();
-                tmp.userAsking = reader.GetString(0);
+                FamilyMember user = new FamilyMember();
+                user.Username = reader.GetString(0);
                 tmp.familyName = reader.GetString(1);
                 tmp.familyCode = reader.GetInt16(2);
                 try
                 {
-                    tmp.Icon = reader.GetInt16(3);
+                    user.Picture = reader.GetInt16(3);
                 }
                 catch
                 {
-                    tmp.Icon = -1;
+                    user.Picture = -1;
                 }
                 lista.Add(tmp);
             }

@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 using Amazon.Lambda.APIGatewayEvents;
 using Amazon.Lambda.Core;
 using Codici;
-using desperate_houseworks_project.Models;
-using spazio;
+using classi;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -20,6 +19,7 @@ namespace AWSLambda2
         readonly string email = "e";
         readonly string token = "token";
         readonly string icon = "icon";
+        readonly string name = "name";
 
         readonly string family = "family";
         readonly string usernameToJoinFamily = "u2";
@@ -45,15 +45,16 @@ namespace AWSLambda2
                 
                 if (operation.Equals("login2"))
                     return Login2(request, context);
-
-                if (operation.Equals("icon"))
-                    return Icon(request, context);
+                
 
                 if (operation.Equals("register"))
                     return Register(request, context);
 
                 if (operation.Equals("verify"))
                     return Verify(request, context);
+
+                if (operation.EndsWith("Profile"))
+                    return Profile(request, context, operation);
 
                 if (operation.EndsWith("Family"))
                     return Family(request, context, operation);
@@ -120,26 +121,6 @@ namespace AWSLambda2
             }
         }
 
-        private APIGatewayProxyResponse Icon(APIGatewayProxyRequest request, ILambdaContext context)
-        {
-            IDictionary<string, string> dizionario = request.QueryStringParameters;
-            dizionario.TryGetValue(this.username, out string user);
-            dizionario.TryGetValue(this.icon, out string icon);
-
-
-            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
-            try
-            {
-
-                Codes codice = funzioniDatabase.UpdateUserIconAsync(user,icon).Result;
-
-                return Response(codice);
-            }
-            catch
-            {
-                return Response(Codes.DatabaseConnectionError);
-            }
-        }
 
         private APIGatewayProxyResponse Register(APIGatewayProxyRequest request, ILambdaContext context)
         {
@@ -200,6 +181,35 @@ namespace AWSLambda2
             {
                 return Response(Codes.DatabaseConnectionError);
             }*/
+        }
+
+        private APIGatewayProxyResponse Profile(APIGatewayProxyRequest request, ILambdaContext context, string operation)
+        {
+            IDictionary<string, string> dizionario = request.QueryStringParameters;
+            dizionario.TryGetValue(this.username, out string user);
+
+
+            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            try
+            {
+                Codes codice = new Codes();
+                if (operation.Equals("iconProfile"))
+                {
+                    dizionario.TryGetValue(this.icon, out string icon);
+                    codice = funzioniDatabase.UpdateUserIconAsync(user, icon).Result;
+                }
+                else
+                    if (operation.Equals("nameProfile"))
+                {
+                    dizionario.TryGetValue(this.name, out string name);
+                    codice = funzioniDatabase.UpdateUserNameAsync(user, name).Result;
+                }
+                return Response(codice);
+            }
+            catch
+            {
+                return Response(Codes.DatabaseConnectionError);
+            }
         }
 
         private APIGatewayProxyResponse Family(APIGatewayProxyRequest request, ILambdaContext context, string operation)
@@ -337,6 +347,7 @@ namespace AWSLambda2
                 Body = gestione.CodeToText(codice)
             };
         }
+
         private APIGatewayProxyResponse Response(int code, string message)
         {
 
