@@ -5,18 +5,17 @@ namespace classi
     public class FamilyMember
     {
         public string Username { get; set; }
+        public string Nickname { get; set; }
         public int Picture { get; set; }
     }
 
-    public class User
+    public class User : FamilyMember
     {
-        public FamilyMember Utente { get; set; }
         public string token { get; set; }
     }
 
-    public class Log
+    public class Log : FamilyMember
     {
-        public FamilyMember User;
         public DateTime date { get; set; }
         public string Category { get; set; }
         public string Name { get; set; }
@@ -30,9 +29,8 @@ namespace classi
         public int quantity { get; set; }
     }
 
-    class RequestClass
+    class RequestClass : FamilyMember
     {
-        public FamilyMember User { get; set; }
         public string familyName { get; set; }
         public int familyCode { get; set; }
     }

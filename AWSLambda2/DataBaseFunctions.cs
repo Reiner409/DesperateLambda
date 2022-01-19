@@ -38,6 +38,7 @@ namespace classi
 
         int LogVerId = 4;
         int LogIconId = 5;
+        int LogNickId = 6;
 
         int familyId = 0;
         int familyNameId = 1;
@@ -325,7 +326,7 @@ namespace classi
                 Console.WriteLine("------------------- GetTasksFamily " + username + family + "----------------------");
 
                 await using (var cmd = new NpgsqlCommand(
-                    String.Format("Select login.username,categoria,tasks.nome,data,tasks.verifica, immagine FROM " +
+                    String.Format("Select login.username,categoria,tasks.nome,data,tasks.verifica, immagine, name FROM " +
                                             "login JOIN {0} tasks ON login.username = tasks.username " +
                                             "WHERE {1} AND data > '{2}' AND data < '{3}' " +
                                             "ORDER BY DATA DESC", modificaFamiglia1, modificaFamiglia2, startingPeriod, endingPeriod), conn))
@@ -853,21 +854,27 @@ namespace classi
         internal Log creazioneLog(NpgsqlDataReader reader)
         {
             Log tmp = new Log();
-            FamilyMember tmpMember = new FamilyMember();
-            tmpMember.Username = reader.GetString(usId);
+            tmp.Username = reader.GetString(usId);
             tmp.Name = reader.GetString(taskNameId);
             tmp.Category = reader.GetString(taskCatId);
             tmp.date = reader.GetDateTime(taskDateId);
             tmp.verified = reader.GetBoolean(LogVerId);
             try
             {
-                tmpMember.Picture = reader.GetInt16(LogIconId);
+                tmp.Picture = reader.GetInt16(LogIconId);
             }
             catch
             {
-                tmpMember.Picture = -1;
+                tmp.Picture = -1;
             }
-            tmp.User = tmpMember;
+            try
+            {
+                tmp.Nickname = reader.GetString(LogNickId);
+            }
+            catch
+            {
+                tmp.Nickname = "";
+            }
             return tmp;
         }
 
