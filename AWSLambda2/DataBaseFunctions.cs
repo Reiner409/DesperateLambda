@@ -29,6 +29,7 @@ namespace classi
         int loginVerId = 3;
         int iconId = 5;
         int token_auth_Id = 7;
+        int nickname_Id = 8;
 
         int taskCatId = 1;
         int taskNameId = 2;
@@ -71,6 +72,9 @@ namespace classi
 
                                     try { diz.Add("Token", reader.GetString(token_auth_Id).ToString()); }
                                     catch { diz.Add("Token", await this.RefreshAuthToken(username)); }
+                                    
+                                    try { diz.Add("Nickname", reader.GetString(nickname_Id).ToString()); }
+                                    catch { diz.Add("Nickname", ""); }
 
                                     if (this.User2Family(username).Result.TryGetValue("name", out string fam))
                                         diz.Add("Family", fam);
@@ -117,6 +121,10 @@ namespace classi
 
                         if (this.User2Family(username).Result.TryGetValue("name", out string fam))
                             diz.Add("Family", fam);
+
+                        try { diz.Add("Nickname", reader.GetString(nickname_Id).ToString()); }
+                        catch { diz.Add("Nickname", ""); }
+
                         return Tuple.Create(Codes.GenericSuccess, diz);
                     }
                     return Tuple.Create(Codes.LoginTokenNotExists, new Dictionary<String, String>());
