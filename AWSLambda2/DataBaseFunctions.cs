@@ -359,7 +359,7 @@ namespace classi
                 Console.WriteLine("-------------------GetFamily" + username + "----------------------");
 
                 await using (var cmd = new NpgsqlCommand(
-                    String.Format("SELECT username, immagine FROM {0} WHERE famiglia={1} AND NOT username='{2}' ",
+                    String.Format("SELECT username, immagine, name FROM {0} WHERE famiglia={1} AND NOT username='{2}' ",
                     loginTable, family, username), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                     return await CreazioneListaFamilyMember(reader);
@@ -929,16 +929,14 @@ namespace classi
             {
                 FamilyMember tmp = new FamilyMember();
                 tmp.Username = reader.GetString(0);
-                try
-                {
-                    tmp.Picture = reader.GetInt32(1);
-                }
-                catch
-                {
-                    tmp.Picture = -1;
-                }
+
+                try{tmp.Picture = reader.GetInt32(1);}
+                catch{tmp.Picture = -1;}
+
+                try { tmp.Nickname = reader.GetString(2); }
+                catch { tmp.Nickname = ""; }
                 lista.Add(tmp);
-            }
+                }
             return lista;
         }
 
