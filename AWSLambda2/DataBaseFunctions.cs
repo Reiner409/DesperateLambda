@@ -632,7 +632,7 @@ namespace classi
                     return Codes.TaskDoesNotExistsError;
 
                 await using (var cmd = new NpgsqlCommand(String.Format(
-                    "UPDATE {0} SET verifica='true' WHERE username='{1}' AND categoria='{2}' AND nome='{3}' AND AND data='{4}'",
+                    "UPDATE {0} SET verifica='true' WHERE username='{1}' AND categoria='{2}' AND nome='{3}' AND data='{4}'",
                     this.taskTable, username, taskCategory, taskName, taskDate), conn))
                 {
                     await cmd.ExecuteNonQueryAsync();

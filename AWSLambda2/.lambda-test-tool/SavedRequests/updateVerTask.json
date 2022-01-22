@@ -1,11 +1,9 @@
 {
   "QueryStringParameters": {
     "u":"pippo",
-    "taskCategory": "Casa",
-    "taskName": "Spesa",
-    "taskTime": "2021-12-30 12:48:17",
-     "taskDescription": "DescrizioneCasa",
-     "taskDone": "true",
+    "taskCategory": "Altro",
+    "taskName": "prova",
+    "taskTime": "2022-01-22 12:00:00",
     "operation" : "updateVerTask"
   }
 }
