@@ -17,6 +17,7 @@ namespace classi
                                    "151.24.29.32", "postgres", "123", "Datas", "5432");
 
         String loginTable = "login";
+        String registerTable = "registrazione";
         String taskTable = "tasks";
         String familyTable = "famiglia";
         String requestJoinFamilyTable = "richiesta_famiglia";
@@ -72,7 +73,7 @@ namespace classi
 
                                     try { diz.Add("Token", reader.GetString(token_auth_Id).ToString()); }
                                     catch { diz.Add("Token", await this.RefreshAuthToken(username)); }
-                                    
+
                                     try { diz.Add("Nickname", reader.GetString(nickname_Id).ToString()); }
                                     catch { diz.Add("Nickname", ""); }
 
@@ -220,12 +221,12 @@ namespace classi
                     return Codes.RegistrationEmailNotValid;
                 if (await VerificaEsistenzaMail(email, conn))
                     return Codes.RegistrationEmailExistsError;
-                if (VerificaEsistenzaUser(username, conn).Result)
+                if (await VerificaEsistenzaUser(username, conn))
                     return Codes.RegistrationUserExistsError;
 
                 string token = await EmailFunctions.InviaEmailVerifica(email, username);
 
-                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @pw, @em, @ver,@fam,@pic,@tok)", loginTable), conn))
+                await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @pw, @em, @ver,@fam,@pic,@tok_not,@tok_auth,@nick)", loginTable), conn))
                 {
                     cmd.Parameters.AddWithValue("us", username);
                     cmd.Parameters.AddWithValue("pw", EncDec.EncryptionHelper.Encrypt(username, password));
@@ -233,8 +234,17 @@ namespace classi
                     cmd.Parameters.AddWithValue("ver", false);
                     cmd.Parameters.AddWithValue("fam", DBNull.Value);
                     cmd.Parameters.AddWithValue("pic", -1);
-                    cmd.Parameters.AddWithValue("tok", token);
+                    cmd.Parameters.AddWithValue("tok_not", DBNull.Value);
+                    cmd.Parameters.AddWithValue("tok_auth", DBNull.Value);
+                    cmd.Parameters.AddWithValue("nick", username);
                     await cmd.ExecuteNonQueryAsync();
+                }
+
+                await using (var cmd2 = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @tok)", registerTable), conn))
+                {
+                    cmd2.Parameters.AddWithValue("us", username);
+                    cmd2.Parameters.AddWithValue("tok", token);
+                    await cmd2.ExecuteNonQueryAsync();
                 }
                 return Codes.GenericSuccess;
             }
@@ -259,16 +269,13 @@ namespace classi
 
                 Console.WriteLine("-------------------VerifyUser----------------------");
 
-                if (!await verificaEsistenzaToken(token, conn))
+                string username = verificaEsistenzaToken(token, conn).Result;
+                if (username == null)
                     return Codes.GenericError;
 
-                await using (var cmd = new NpgsqlCommand(String.Format(
-                    "UPDATE {0} SET verifica='true', token=NULL WHERE token='{1}'",
-                    this.loginTable, token), conn))
-
-                await using (var reader = await cmd.ExecuteReaderAsync())
-                    return Codes.GenericSuccess;
-
+                await VerifyUser(conn, username);
+                await RemoveUserFromRegisterTable(conn, username);
+                return Codes.GenericSuccess;
             }
             catch
             {
@@ -276,6 +283,31 @@ namespace classi
                 return Codes.LoginVerificationError;
             }
         }
+
+        private async Task VerifyUser(NpgsqlConnection conn, string username)
+        {
+            await using (var cmd = new NpgsqlCommand(String.Format(
+                "UPDATE {0} SET verifica='true' WHERE username='{1}'",
+                this.loginTable, username), conn))
+            await using (var reader = await cmd.ExecuteReaderAsync())
+                while (await reader.ReadAsync())
+                {
+
+                }
+        }
+
+        private async Task RemoveUserFromRegisterTable(NpgsqlConnection conn, string username)
+        {
+            await using (var cmd = new NpgsqlCommand(String.Format(
+                    "DELETE FROM {0} WHERE username='{1}'",
+                    this.registerTable, username), conn))
+            await using (var reader = await cmd.ExecuteReaderAsync())
+                while (await reader.ReadAsync())
+                {
+
+                }
+        }
+
 
 
 
@@ -930,31 +962,32 @@ namespace classi
                 FamilyMember tmp = new FamilyMember();
                 tmp.Username = reader.GetString(0);
 
-                try{tmp.Picture = reader.GetInt32(1);}
-                catch{tmp.Picture = -1;}
+                try { tmp.Picture = reader.GetInt32(1); }
+                catch { tmp.Picture = -1; }
 
                 try { tmp.Nickname = reader.GetString(2); }
                 catch { tmp.Nickname = ""; }
                 lista.Add(tmp);
-                }
+            }
             return lista;
         }
 
-        private async Task<Boolean> verificaEsistenzaToken(string token, NpgsqlConnection conn)
+        private async Task<string> verificaEsistenzaToken(string token, NpgsqlConnection conn)
         {
             try
             {
                 await using (var cmd = new NpgsqlCommand(String.Format(
                     "SELECT * FROM {0} WHERE token='{1}'",
-                    this.loginTable, token), conn))
+                    this.registerTable, token), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    return await reader.ReadAsync();
+                    await reader.ReadAsync();
+                    return reader.GetString(0);
                 }
             }
             catch
             {
-                return false;
+                return null;
             }
         }
 
