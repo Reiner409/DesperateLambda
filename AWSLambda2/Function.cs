@@ -87,11 +87,11 @@ namespace AWSLambda2
             dizionario.TryGetValue(this.password, out string password);
 
 
-            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            UserMethods funzioniUser = new UserMethods();
             try
             {
 
-                Tuple<Codes, Dictionary<String, String>> codice = funzioniDatabase.LoginAsync(userID, password).Result;
+                Tuple<Codes, Dictionary<String, String>> codice = funzioniUser.LoginAsync(userID, password).Result;
 
                 return ResponseLogin(codice);
             }
@@ -107,11 +107,11 @@ namespace AWSLambda2
             dizionario.TryGetValue(this.token, out string token);
 
 
-            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            UserMethods funzioniUser = new UserMethods();
             try
             {
 
-                Tuple<Codes, Dictionary<String, String>> codice = funzioniDatabase.Login2Async(token).Result;
+                Tuple<Codes, Dictionary<String, String>> codice = funzioniUser.Login2Async(token).Result;
 
                 return ResponseLogin(codice);
             }
@@ -129,7 +129,7 @@ namespace AWSLambda2
             dizionario.TryGetValue(this.password, out string password);
             dizionario.TryGetValue(this.email, out string email);
 
-            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            UserMethods funzioniDatabase = new UserMethods();
             Task<Codes> codice = funzioniDatabase.RegisterAsync(userID, password, email);
 
             return Response(codice.Result);
@@ -140,7 +140,7 @@ namespace AWSLambda2
             IDictionary<string, string> dizionario = request.QueryStringParameters;
             dizionario.TryGetValue(this.token, out string token);
 
-            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            UserMethods funzioniDatabase = new UserMethods();
             Task<Codes> codice = funzioniDatabase.VerifyUserAsync(token);
 
             switch ((int)codice.Result)
@@ -189,7 +189,7 @@ namespace AWSLambda2
             dizionario.TryGetValue(this.username, out string user);
 
 
-            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            UserMethods funzioniDatabase = new UserMethods();
             try
             {
                 Codes codice = new Codes();
@@ -214,14 +214,14 @@ namespace AWSLambda2
 
         private APIGatewayProxyResponse Family(APIGatewayProxyRequest request, ILambdaContext context, string operation)
         {
-            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            FamilyMethods funzioniDatabase = new FamilyMethods();
             IDictionary<string, string> dizionario = request.QueryStringParameters;
             dizionario.TryGetValue(this.username, out string username);
             string family;
 
             if (operation.Equals("createFamily"))
             {
-                if (funzioniDatabase.User2Family(username).Result.Count != 0)
+                if (FamilyMethods.User2Family(username).Result.Count != 0)
                     return Response(Codes.FamilyUserAlreadyInFamily);
                 dizionario.TryGetValue(this.family, out family);
                 return Response(funzioniDatabase.CreateFamilyMethodAsync(username, family).Result);
@@ -242,7 +242,7 @@ namespace AWSLambda2
 
             try
             {
-                funzioniDatabase.User2Family(username).Result.TryGetValue("id", out family);
+                FamilyMethods.User2Family(username).Result.TryGetValue("id", out family);
             }
             catch
             {
@@ -282,7 +282,7 @@ namespace AWSLambda2
         private APIGatewayProxyResponse Task(APIGatewayProxyRequest request, ILambdaContext context, string operation)
         {
 
-            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            TaskMethods funzioniDatabase = new TaskMethods();
             IDictionary<string, string> dizionario = request.QueryStringParameters;
             dizionario.TryGetValue(this.username, out string username);
 
@@ -313,7 +313,7 @@ namespace AWSLambda2
 
         private APIGatewayProxyResponse Medal(APIGatewayProxyRequest request, ILambdaContext context, string operation)
         {
-            DataBaseFunctions funzioniDatabase = new DataBaseFunctions();
+            FamilyMethods funzioniDatabase = new FamilyMethods();
             IDictionary<string, string> dizionario = request.QueryStringParameters;
             dizionario.TryGetValue(this.username, out string username);
             switch (operation)
