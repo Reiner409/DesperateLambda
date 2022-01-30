@@ -127,6 +127,7 @@ namespace classi
             }
 
         }
+
         public async Task UpdateNotificationsToken(string username, string token)
         {
             try
@@ -145,6 +146,27 @@ namespace classi
                 System.Diagnostics.Debug.WriteLine("Couldn't update Notification token for " + username + " token: " + token);
             }
 
+        }
+
+        public static async Task<String> GetUserNotificationToken(string username)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("-------------------LOGIN " + username + "----------------------");
+
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT token_notifiche FROM {0} WHERE username='{1}'", loginTable, username), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                    if (await reader.ReadAsync())
+                        return reader.GetString(0);
+                return "";
+            }
+            catch
+            {
+                return "";
+            }
         }
 
         internal async Task<Codes> UpdateUserIconAsync(string user, string icon)

@@ -1,10 +1,15 @@
 ﻿using Codici;
+using Newtonsoft.Json;
 using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
+using System.Collections.Specialized;
+using System.Text.Json;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace classi
 {
@@ -149,6 +154,9 @@ namespace classi
                     cmd.Parameters.AddWithValue("v", Boolean.Parse(taskDone));
                     await cmd.ExecuteNonQueryAsync();
                 }
+
+                bool isGenerated = await GeneratePushNotification(username, taskName, taskCategory, taskDate);
+
                 return Codes.GenericSuccess;
             }
             catch
@@ -157,7 +165,6 @@ namespace classi
                 return Codes.TaskAddError;
             }
         }
-
 
         private async Task<List<TaskClass>> CreazioneListaTasks(NpgsqlDataReader reader)
         {
@@ -292,5 +299,63 @@ namespace classi
             }
         }
 
+        private async Task<Boolean> GeneratePushNotification(string username, string taskName, string taskCategory, string taskDate)
+        {
+            try
+            {
+
+                WebRequest tRequest = WebRequest.Create("https://fcm.googleapis.com/fcm/send");
+                tRequest.Method = "post";
+                tRequest.ContentType = "application/json";
+                tRequest.Headers.Add(string.Format("Authorization: key={0}", "AAAACHKn41M:APA91bGNz73Qvek7bfOGHQ8kb3jhdRSVYmq81a3lw2u0aVspD2W9BXDqQTK_wzdnXsBLxIZc13jQAMDwu1w04sL04lVo6qxfguJDUtI8OhP3DD8NHRfbdckmt89gsvEq7CMKU_6G3FZQ"));
+                
+                Byte[] byteArray =  await PushBodyCreation(username, taskName, taskCategory, taskDate);
+
+                tRequest.ContentLength = byteArray.Length;
+                using (Stream dataStream = tRequest.GetRequestStream())
+                {
+                    dataStream.Write(byteArray, 0, byteArray.Length);
+                    using (WebResponse tResponse = tRequest.GetResponse())
+                    {
+                        using (Stream dataStreamResponse = tResponse.GetResponseStream())
+                        {
+                            if (dataStreamResponse != null) using (StreamReader tReader = new StreamReader(dataStreamResponse))
+                                {
+                                    String sResponseFromServer = tReader.ReadToEnd();
+                                    Dictionary<String, String> tmp = (Dictionary<String, String>)JsonConvert.DeserializeObject(sResponseFromServer, typeof (Dictionary<String,String>));
+                                    tmp.TryGetValue("success", out string risultato);
+                                    return risultato.Equals("1");
+                                    //result.Response = sResponseFromServer;
+                                }
+                        }
+                    }
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task<Byte[]> PushBodyCreation(string username, string taskName, string taskCategory, string taskDate)
+        {
+            var payload = new
+            {
+                to = await UserMethods.GetUserNotificationToken(username),
+                priority = "high",
+                data = new
+                {
+                    body = "Hey, " + "UTENTE" + " ti ha appena fornito un nuovo compito!",
+                    name = taskName,
+                    category = taskCategory,
+                    scheduledTime = taskDate
+                }
+
+            };
+
+            string postbody = JsonConvert.SerializeObject(payload).ToString();
+            return Encoding.UTF8.GetBytes(postbody);
+        }
     }
 }
