@@ -12,7 +12,7 @@ namespace classi
     class UserMethods : DataBaseFunctions
     {
 
-        public async Task<Tuple<Codes, Dictionary<String, String>>> LoginAsync(string username, string password)
+        public async Task<Tuple<Codes, Dictionary<String, String>>> LoginAsync(string username, string password, string tokenNotifications)
         {
             try
             {
@@ -38,6 +38,8 @@ namespace classi
                                     try { diz.Add("Token", reader.GetString(token_auth_Id).ToString()); }
                                     catch { diz.Add("Token", await RefreshAuthToken(username)); }
 
+                                    await UpdateNotificationsToken(username, tokenNotifications);
+
                                     try { diz.Add("Nickname", reader.GetString(nickname_Id).ToString()); }
                                     catch { diz.Add("Nickname", ""); }
 
@@ -62,7 +64,7 @@ namespace classi
             }
         }
 
-        public async Task<Tuple<Codes, Dictionary<String, String>>> Login2Async(string token)
+        public async Task<Tuple<Codes, Dictionary<String, String>>> LoginTokenAsync(string token, string tokenNotifications)
         {
             try
             {
@@ -89,6 +91,8 @@ namespace classi
 
                         try { diz.Add("Nickname", reader.GetString(nickname_Id).ToString()); }
                         catch { diz.Add("Nickname", ""); }
+
+                        await UpdateNotificationsToken(username, tokenNotifications);
 
                         return Tuple.Create(Codes.GenericSuccess, diz);
                     }
@@ -120,6 +124,25 @@ namespace classi
             catch
             {
                 return "";
+            }
+
+        }
+        public async Task UpdateNotificationsToken(string username, string token)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                        "UPDATE {0} SET token_notifiche='{1}' WHERE username='{2}'",
+                        loginTable, token, username), conn))
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+            catch
+            {
+                System.Diagnostics.Debug.WriteLine("Couldn't update Notification token for " + username + " token: " + token);
             }
 
         }

@@ -18,6 +18,7 @@ namespace AWSLambda2
         readonly string password = "p";
         readonly string email = "e";
         readonly string token = "token";
+        readonly string token_notifications = "tokenNotifications";
         readonly string icon = "icon";
         readonly string name = "name";
 
@@ -44,7 +45,7 @@ namespace AWSLambda2
                     return Login(request, context);
                 
                 if (operation.Equals("login2"))
-                    return Login2(request, context);
+                    return LoginToken(request, context);
                 
 
                 if (operation.Equals("register"))
@@ -85,13 +86,13 @@ namespace AWSLambda2
             IDictionary<string, string> dizionario = request.QueryStringParameters;
             dizionario.TryGetValue(this.username, out string userID);
             dizionario.TryGetValue(this.password, out string password);
-
+            dizionario.TryGetValue(this.token_notifications, out string tokenNotifications);
 
             UserMethods funzioniUser = new UserMethods();
             try
             {
 
-                Tuple<Codes, Dictionary<String, String>> codice = funzioniUser.LoginAsync(userID, password).Result;
+                Tuple<Codes, Dictionary<String, String>> codice = funzioniUser.LoginAsync(userID, password, tokenNotifications).Result;
 
                 return ResponseLogin(codice);
             }
@@ -101,17 +102,17 @@ namespace AWSLambda2
             }
         }
 
-        private APIGatewayProxyResponse Login2(APIGatewayProxyRequest request, ILambdaContext context)
+        private APIGatewayProxyResponse LoginToken(APIGatewayProxyRequest request, ILambdaContext context)
         {
             IDictionary<string, string> dizionario = request.QueryStringParameters;
             dizionario.TryGetValue(this.token, out string token);
-
+            dizionario.TryGetValue(this.token_notifications, out string tokenNotifications);
 
             UserMethods funzioniUser = new UserMethods();
             try
             {
 
-                Tuple<Codes, Dictionary<String, String>> codice = funzioniUser.Login2Async(token).Result;
+                Tuple<Codes, Dictionary<String, String>> codice = funzioniUser.LoginTokenAsync(token, tokenNotifications).Result;
 
                 return ResponseLogin(codice);
             }

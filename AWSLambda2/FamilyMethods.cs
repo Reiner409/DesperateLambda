@@ -76,7 +76,7 @@ namespace classi
                 Console.WriteLine("-------------------GetJoinRequestsFamily" + username + "----------------------");
 
                 await using (var cmd = new NpgsqlCommand(
-                    String.Format("SELECT username_requesting, nome, {0}.id, immagine FROM {0} JOIN {1} ON {0}.id={1}.id JOIN {2} ON " +
+                    String.Format("SELECT username_requesting, nome, {0}.id, immagine, name FROM {0} JOIN {1} ON {0}.id={1}.id JOIN {2} ON " +
                     "username_requesting={2}.username  WHERE {1}.username='{3}'",
                     familyTable, requestJoinFamilyTable, loginTable, username), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
@@ -368,18 +368,18 @@ namespace classi
             while (await reader.ReadAsync())
             {
                 RequestClass tmp = new RequestClass();
-                FamilyMember user = new FamilyMember();
-                user.Username = reader.GetString(0);
+                tmp.Username = reader.GetString(0);
                 tmp.familyName = reader.GetString(1);
                 tmp.familyCode = reader.GetInt16(2);
                 try
                 {
-                    user.Picture = reader.GetInt16(3);
+                    tmp.Picture = reader.GetInt16(3);
                 }
                 catch
                 {
-                    user.Picture = -1;
+                    tmp.Picture = -1;
                 }
+                tmp.Nickname = reader.GetString(4);
                 lista.Add(tmp);
             }
             return lista;
