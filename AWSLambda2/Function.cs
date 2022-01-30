@@ -291,6 +291,8 @@ namespace AWSLambda2
                 return Response((funzioniDatabase.GetVerifiedTaskMethodAsync(username, "false").Result));
             if (operation.Equals("getVerifiedTask"))
                 return Response((funzioniDatabase.GetVerifiedTaskMethodAsync(username, "true").Result));
+            if (operation.Equals("getWeekTask"))
+                return Response((funzioniDatabase.GetEveryTaskMethodByDateAsync(username).Result));
             if (operation.Equals("getTask"))
                 return Response((funzioniDatabase.GetEveryTaskMethodAsync(username).Result));
 

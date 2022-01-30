@@ -53,7 +53,30 @@ namespace classi
                 return null;
             }
         }
+        
+        //Gets every task for the user 1 week prior to this day and 1 week later.
+        internal async Task<List<TaskClass>> GetEveryTaskMethodByDateAsync(string username)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
 
+                Console.WriteLine("-------------------GetEveryTask " + username + "----------------------");
+
+                string before = DateTime.Today.AddDays(-7).ToString("yyyy-MM-dd 00:00:00");
+                string after = DateTime.Today.AddDays(7).ToString("yyyy-MM-dd 00:00:00");
+
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT * FROM {0} WHERE username='{1}' AND data>'{2}' AND data<'{3}'",
+                    taskTable, username,before,after), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                    return await CreazioneListaTasks(reader);
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
         internal async Task<Codes> UpdateVerTasksMethodAsync(string username, string taskName,
                                                        string taskCategory, string taskDate)
