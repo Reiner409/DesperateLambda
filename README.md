@@ -72,7 +72,7 @@ LOG - DEPRECATO
    u, name
 
  - resetPasswordRequestProfile : Richiede un reset della password; Viene inviato un codice all'e-mail dell'utente che dovrà utilizzare in seguito. 
-   u
+   e
 
  - checkTokenProfile : Verifica la correttezza del codice inviato precedentemente
    u, token
