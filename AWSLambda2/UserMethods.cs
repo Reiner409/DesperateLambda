@@ -303,14 +303,17 @@ namespace classi
 
                 Console.WriteLine("-------------------RESETPASSWORD - SEND EMAIL " + email + "----------------------");
 
+                if (!VerificaEsistenzaMail(email, conn).Result)
+                    return Codes.RegistrationEmailNotValid;
+
                 int token = GenerateTokenResetPassword();
 
                 //Inserisci un nuovo token se non presente
                 try
                 {
-                    await using (var cmd2 = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @tok)", resetPasswordTable), conn))
+                    await using (var cmd2 = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@e, @tok)", resetPasswordTable), conn))
                     {
-                        cmd2.Parameters.AddWithValue("us", email);
+                        cmd2.Parameters.AddWithValue("e", email);
                         cmd2.Parameters.AddWithValue("tok", token);
                         await cmd2.ExecuteNonQueryAsync();
                     }
@@ -332,7 +335,7 @@ namespace classi
             catch
             {
                 Console.WriteLine("-------------------CRASH " + email + "----------------------");
-                return Codes.RegistrationError;
+                return Codes.PasswordResetFirstStepError;
             }
         }
 
