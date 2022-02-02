@@ -303,15 +303,6 @@ namespace classi
 
                 Console.WriteLine("-------------------RESETPASSWORD - SEND EMAIL " + email + "----------------------");
 
-                string username = "";
-
-                await using (var cmd = new NpgsqlCommand(String.Format("SELECT username FROM {0} WHERE email='{1}'", loginTable, email), conn))
-                await using (var reader = await cmd.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                        username = reader.GetString(0).ToString();
-                }
-
                 int token = GenerateTokenResetPassword();
 
                 //Inserisci un nuovo token se non presente
@@ -319,7 +310,7 @@ namespace classi
                 {
                     await using (var cmd2 = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @tok)", resetPasswordTable), conn))
                     {
-                        cmd2.Parameters.AddWithValue("us", username);
+                        cmd2.Parameters.AddWithValue("us", email);
                         cmd2.Parameters.AddWithValue("tok", token);
                         await cmd2.ExecuteNonQueryAsync();
                     }
@@ -327,8 +318,8 @@ namespace classi
                 catch
                 {
                     //Se già presente, lo aggiorno
-                    await using (var cmd2 = new NpgsqlCommand(String.Format("UPDATE {0} SET token={1}  WHERE username='{2}' ", 
-                        resetPasswordTable,token, username), conn))
+                    await using (var cmd2 = new NpgsqlCommand(String.Format("UPDATE {0} SET token={1}  WHERE email='{2}' ", 
+                        resetPasswordTable,token, email), conn))
                     {
                         await cmd2.ExecuteNonQueryAsync();
                     }

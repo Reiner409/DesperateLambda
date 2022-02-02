@@ -21,6 +21,7 @@ namespace Codici
         UpdateUserNameError = 405,
         UpdatePasswordWrongToken = 406,
         UpdateUserPasswordError = 407,
+        PasswordResetFirstStepError = 408,
         LoginGenericError =409,
 
         //Registration
@@ -61,6 +62,7 @@ namespace Codici
         DatabaseConnectionError = 491,
         ToBeAdded=498,
         GenericError = 499,
+
     }
 
     class GestioneCodici
@@ -92,6 +94,8 @@ namespace Codici
                     return "Reset Password - Wrong Token";
                 case 407:
                     return "Reset Password - Error";
+                case 408:
+                    return "Reset Password - Couldn't send token or DB error.";
                 case 409:
                     return "Login - Generic Error";
 
