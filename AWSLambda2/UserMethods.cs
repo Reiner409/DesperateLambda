@@ -112,7 +112,7 @@ namespace classi
             {
                 await using var conn = new NpgsqlConnection(connString);
                 await conn.OpenAsync();
-                String token = GenerateToken(username);
+                String token = GenerateTokenVerifyUser(username);
                 await using (var cmd = new NpgsqlCommand(String.Format(
                         "UPDATE {0} SET token_auth='{1}' WHERE username='{2}'",
                         loginTable, token, username), conn))
@@ -193,6 +193,36 @@ namespace classi
             }
         }
 
+        internal async Task<Codes> UpdateUserPasswordAsync(string username, string password)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                password = EncDec.EncryptionHelper.Encrypt(username, password);
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                        "UPDATE {0} SET password='{1}' WHERE username='{2}'",
+                        loginTable, password, username), conn))
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                    "DELETE FROM {0} WHERE username='{1}'",
+                    resetPasswordTable, username), conn))
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                return Codes.GenericSuccess;
+            }
+            catch
+            {
+                return Codes.UpdateUserPasswordError;
+            }
+        }
+
         internal async Task<Codes> UpdateUserNameAsync(string user, string name)
         {
             try
@@ -264,9 +294,97 @@ namespace classi
             }
         }
 
-        private string GenerateToken(string user)
+        public async Task<Codes> ResetPasswordFirstStepAsync(string username)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("-------------------RESETPASSWORD - SEND EMAIL " + username + "----------------------");
+
+                string email = "";
+
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT email FROM {0} WHERE username='{1}'", loginTable, username), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                        email = reader.GetString(0).ToString();
+                }
+
+                int token = GenerateTokenResetPassword(username);
+
+                //Inserisci un nuovo token se non presente
+                try
+                {
+                    await using (var cmd2 = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @tok)", resetPasswordTable), conn))
+                    {
+                        cmd2.Parameters.AddWithValue("us", username);
+                        cmd2.Parameters.AddWithValue("tok", token);
+                        await cmd2.ExecuteNonQueryAsync();
+                    }
+                }
+                catch
+                {
+                    //Se già presente, lo aggiorno
+                    await using (var cmd2 = new NpgsqlCommand(String.Format("UPDATE {0} SET token={1}  WHERE username='{2}' ", 
+                        resetPasswordTable,token, username), conn))
+                    {
+                        await cmd2.ExecuteNonQueryAsync();
+                    }
+                }
+
+                EmailFunctions.InviaEmailResetPassword(email, token);
+
+                return Codes.GenericSuccess;
+            }
+            catch
+            {
+                Console.WriteLine("-------------------CRASH " + username + "----------------------");
+                return Codes.RegistrationError;
+            }
+        }
+
+        public async Task<Codes> VerifyResetPassword(string username, string tokenToVerify)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("-------------------RESETPASSWORD - VERIFY " + username + "----------------------");
+
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT token FROM {0} WHERE username='{1}'", resetPasswordTable, username), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        string token = reader.GetInt32(0).ToString();
+                        if (tokenToVerify.Equals(token))
+                        {
+                            return Codes.GenericSuccess;
+                        }
+                    }
+                }
+
+                return Codes.UpdatePasswordWrongToken;
+            }
+
+            catch
+            {
+                Console.WriteLine("-------------------CRASH " + username + "----------------------");
+                return Codes.RegistrationError;
+            }
+        }
+
+        private string GenerateTokenVerifyUser(string user)
         {
             return EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString(), user);
+        }
+
+        private int GenerateTokenResetPassword()
+        {
+            return new Random().Next(100000, 999999);
         }
 
         internal async Task<Codes> VerifyUserAsync(string token)

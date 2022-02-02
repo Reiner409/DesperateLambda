@@ -23,6 +23,7 @@ namespace classi
         static public String requestJoinFamilyTable = "richiesta_famiglia";
         static public String medalTable = "medagliere";
         static public String logTable = "log_famiglia";
+        static public String resetPasswordTable = "reset_password";
 
         static public int usId = 0;
         static public int pwId = 1;

@@ -19,6 +19,8 @@ namespace Codici
         LoginTokenNotExists = 403,
         UpdateUserIconError = 404,
         UpdateUserNameError = 405,
+        UpdatePasswordWrongToken = 406,
+        UpdateUserPasswordError = 407,
         LoginGenericError =409,
 
         //Registration
@@ -59,7 +61,6 @@ namespace Codici
         DatabaseConnectionError = 491,
         ToBeAdded=498,
         GenericError = 499,
-        
     }
 
     class GestioneCodici
@@ -87,6 +88,10 @@ namespace Codici
                     return "Profile - Couldn't update user icon";
                 case 405:
                     return "Profile - Couldn't update user name";
+                case 406:
+                    return "Reset Password - Wrong Token";
+                case 407:
+                    return "Reset Password - Error";
                 case 409:
                     return "Login - Generic Error";
 

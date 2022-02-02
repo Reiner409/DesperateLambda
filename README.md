@@ -60,8 +60,22 @@ FAMILY
  -  getMedal : Ottiene tutte le medaglie dell'utente
     u
 
-LOG
+LOG - DEPRECATO
  -  getLog : Ottiene il LOG della famiglia / dell'utente (Solo nel caso non avente una famiglia)
     u
     
- 
+ PROFILE
+ - iconProfile : Modifica l'icona dell'utente.
+   u, icon
+
+ - nameProfile : Modifica il nickname dell'utente.
+   u, name
+
+ - resetPasswordRequestProfile : Richiede un reset della password; Viene inviato un codice all'e-mail dell'utente che dovrà utilizzare in seguito. 
+   u
+
+ - checkTokenProfile : Verifica la correttezza del codice inviato precedentemente
+   u, token
+
+ - resetPasswordProfile : Reset della password eliminando il token dal DB
+   u, password

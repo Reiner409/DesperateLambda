@@ -6,6 +6,7 @@ using Amazon.Lambda.APIGatewayEvents;
 using Amazon.Lambda.Core;
 using Codici;
 using classi;
+using System.Text;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -43,10 +44,10 @@ namespace AWSLambda2
 
                 if (operation.Equals("login"))
                     return Login(request, context);
-                
+
                 if (operation.Equals("login2"))
                     return LoginToken(request, context);
-                
+
 
                 if (operation.Equals("register"))
                     return Register(request, context);
@@ -77,12 +78,11 @@ namespace AWSLambda2
             }
         }
 
-        
+
 
         private APIGatewayProxyResponse Login(APIGatewayProxyRequest request, ILambdaContext context)
 
         {
-
             IDictionary<string, string> dizionario = request.QueryStringParameters;
             dizionario.TryGetValue(this.username, out string userID);
             dizionario.TryGetValue(this.password, out string password);
@@ -199,11 +199,26 @@ namespace AWSLambda2
                     dizionario.TryGetValue(this.icon, out string icon);
                     codice = funzioniDatabase.UpdateUserIconAsync(user, icon).Result;
                 }
-                else
-                    if (operation.Equals("nameProfile"))
+
+                if (operation.Equals("nameProfile"))
                 {
                     dizionario.TryGetValue(this.name, out string name);
-                    codice = funzioniDatabase.UpdateUserNameAsync(user, name).Result;
+                    codice = funzioniDatabase.UpdateUserNameAsync(user, Encoding.UTF8.GetString(Convert.FromBase64String(name))).Result;
+                }
+
+                if (operation.Equals("resetPasswordRequestProfile"))
+                {
+                    codice = funzioniDatabase.ResetPasswordFirstStepAsync(user).Result;
+                }
+                if (operation.Equals("checkTokenProfile"))
+                {
+                    dizionario.TryGetValue(this.token, out string token);
+                    codice = funzioniDatabase.VerifyResetPassword(user, token).Result;
+                }
+                if (operation.Equals("resetPasswordProfile"))
+                {
+                    dizionario.TryGetValue(this.password, out string password);
+                    codice = funzioniDatabase.UpdateUserPasswordAsync(user, password).Result;
                 }
                 return Response(codice);
             }

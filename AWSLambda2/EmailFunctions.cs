@@ -32,5 +32,19 @@ namespace AWSLambda2
             
             return token;
         }
+
+        internal static void InviaEmailResetPassword(string email, int token)
+        {
+
+            SmtpClient smtp = new SmtpClient("smtp.gmail.com");
+            smtp.EnableSsl = true;
+            smtp.Port = 587;
+            smtp.Credentials = new NetworkCredential(baseEmail, basePw);
+
+            smtp.Send(baseEmail, email.ToLower(), "Reset della password DesperateHouseworks",
+                "Questa e-mail ti è stata inviata in quanto hai richiesto il reset della password dell'applicazione.\n" +
+                "Il codice da immettere è il seguente: " + token + "\n\n" +
+                "Se non sei stato/a tu a richiedere modifica, ti invitiamo a modificare la password immediatamente.");
+        }
     }
 }
