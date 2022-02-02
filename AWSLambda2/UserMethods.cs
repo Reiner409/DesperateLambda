@@ -27,7 +27,7 @@ namespace classi
                     if (await reader.ReadAsync())
                     {
                         {
-                            if (reader.GetString(usId).Equals(username) && reader.GetString(pwId).Equals(EncDec.EncryptionHelper.Encrypt(password)))
+                            if (reader.GetString(usId).Equals(username) && reader.GetString(pwId).Equals(EncDec.EncryptionHelper.Encrypt(username, password)))
                                 if (reader.GetBoolean(loginVerId))
                                 {
                                     Dictionary<String, String> diz = new Dictionary<string, string>();
@@ -200,7 +200,14 @@ namespace classi
                 await using var conn = new NpgsqlConnection(connString);
                 await conn.OpenAsync();
 
-                password = EncDec.EncryptionHelper.Encrypt(password);
+                string username = "";
+
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT username FROM {0} WHERE email='{1}'", loginTable, email), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                    if (await reader.ReadAsync())
+                        username =  reader.GetString(0);
+
+                password = EncDec.EncryptionHelper.Encrypt(username, password);
 
                 await using (var cmd = new NpgsqlCommand(String.Format(
                         "UPDATE {0} SET password='{1}' WHERE email='{2}'",
@@ -268,7 +275,7 @@ namespace classi
                 await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @pw, @em, @ver,@fam,@pic,@tok_not,@tok_auth,@nick)", loginTable), conn))
                 {
                     cmd.Parameters.AddWithValue("us", username);
-                    cmd.Parameters.AddWithValue("pw", EncDec.EncryptionHelper.Encrypt(password));
+                    cmd.Parameters.AddWithValue("pw", EncDec.EncryptionHelper.Encrypt(username, password));
                     cmd.Parameters.AddWithValue("em", email);
                     cmd.Parameters.AddWithValue("ver", false);
                     cmd.Parameters.AddWithValue("fam", DBNull.Value);
@@ -379,7 +386,7 @@ namespace classi
 
         private string GenerateTokenVerifyUser(string user)
         {
-            return EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString() + user);
+            return EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString(), user);
         }
 
         private int GenerateTokenResetPassword()

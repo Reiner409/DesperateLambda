@@ -18,7 +18,7 @@ namespace AWSLambda2
         internal static string InviaEmailVerifica(string email, string user)
         {
 
-            String token = EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString()+user);
+            String token = EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString(), user);
 
             SmtpClient smtp = new SmtpClient("smtp.gmail.com");
             smtp.EnableSsl = true;

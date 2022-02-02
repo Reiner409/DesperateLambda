@@ -13,13 +13,13 @@ namespace EncDec
     }
     public static class EncryptionHelper
     {
-        public static string Encrypt(string password)
+        public static string Encrypt(string user, string password)
         {
             //Algoritmo di cifratura: SHA3
             var hashAlgorithm = new Org.BouncyCastle.Crypto.Digests.Sha3Digest(512);
 
             // Choose correct encoding based on your usecase
-            byte[] input = Encoding.ASCII.GetBytes(password);
+            byte[] input = Encoding.ASCII.GetBytes(user+password);
 
             hashAlgorithm.BlockUpdate(input, 0, input.Length);
 
