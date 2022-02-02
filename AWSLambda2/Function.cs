@@ -33,6 +33,7 @@ namespace AWSLambda2
         readonly string taskDescription = "taskDescription";
         readonly string taskTime = "taskTime";
         readonly string taskDone = "taskDone";
+        readonly string userAsking = "u2";
 
         //readonly string numeroLog = "numeroLog";
 
@@ -327,7 +328,17 @@ namespace AWSLambda2
             switch (operation)
             {
                 case "addTask":
-                    return Response(funzioniDatabase.AddTasksMethodAsync(username, taskN, taskC, taskT, taskDescr, taskDone).Result);
+                    string usernameAsking = "";
+                    try
+                    {
+                        dizionario.TryGetValue(this.userAsking, out usernameAsking);
+                    }
+                    catch
+                    {
+                        
+                    }
+                    
+                    return Response(funzioniDatabase.AddTasksMethodAsync(username, taskN, taskC, taskT, taskDescr, taskDone, usernameAsking).Result);
                 case "removeTask":
                     return Response((funzioniDatabase.RemoveTasksMethodAsync(username, taskN, taskC, taskT).Result));
                 case "updateVerTask":

@@ -53,7 +53,7 @@ namespace classi
                 return null;
             }
         }
-        
+
         //Gets every task for the user 1 week prior to this day and 1 week later.
         internal async Task<List<TaskClass>> GetEveryTaskMethodByDateAsync(string username)
         {
@@ -68,7 +68,7 @@ namespace classi
                 string after = DateTime.Today.AddDays(7).ToString("yyyy-MM-dd 00:00:00");
 
                 await using (var cmd = new NpgsqlCommand(String.Format("SELECT * FROM {0} WHERE username='{1}' AND data>'{2}' AND data<'{3}'",
-                    taskTable, username,before,after), conn))
+                    taskTable, username, before, after), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                     return await CreazioneListaTasks(reader);
             }
@@ -151,9 +151,9 @@ namespace classi
             }
         }
 
-        internal async Task<Codes> AddTasksMethodAsync(string username, string taskName,
-                                                               string taskCategory, string taskDate,
-                                                               string taskDescription, string taskDone)
+        internal async Task<Codes> AddTasksMethodAsync(string username, string usernameSending,
+                                                                string taskName, string taskCategory, string taskDate,
+                                                                string taskDescription, string taskDone)
         {
             try
             {
@@ -178,7 +178,7 @@ namespace classi
                     await cmd.ExecuteNonQueryAsync();
                 }
 
-                bool isGenerated = await GeneratePushNotification(username, taskName, taskCategory, taskDate);
+                bool isGenerated = await GeneratePushNotification(username, taskName, taskCategory, taskDate, usernameSending);
 
                 return Codes.GenericSuccess;
             }
@@ -322,7 +322,7 @@ namespace classi
             }
         }
 
-        private async static Task<Boolean> GeneratePushNotification(string username, string taskName, string taskCategory, string taskDate)
+        private async static Task<Boolean> GeneratePushNotification(string username, string taskName, string taskCategory, string taskDate, string usernameSending)
         {
             try
             {
@@ -331,8 +331,8 @@ namespace classi
                 tRequest.Method = "post";
                 tRequest.ContentType = "application/json";
                 tRequest.Headers.Add(string.Format("Authorization: key={0}", "AAAACHKn41M:APA91bGNz73Qvek7bfOGHQ8kb3jhdRSVYmq81a3lw2u0aVspD2W9BXDqQTK_wzdnXsBLxIZc13jQAMDwu1w04sL04lVo6qxfguJDUtI8OhP3DD8NHRfbdckmt89gsvEq7CMKU_6G3FZQ"));
-                
-                Byte[] byteArray =  await PushBodyCreation(username, taskName, taskCategory, taskDate);
+
+                Byte[] byteArray = await PushBodyCreation(username, taskName, taskCategory, taskDate, usernameSending);
 
                 tRequest.ContentLength = byteArray.Length;
                 using (Stream dataStream = tRequest.GetRequestStream())
@@ -345,7 +345,7 @@ namespace classi
                             if (dataStreamResponse != null) using (StreamReader tReader = new StreamReader(dataStreamResponse))
                                 {
                                     String sResponseFromServer = tReader.ReadToEnd();
-                                    Dictionary<String, String> tmp = (Dictionary<String, String>)JsonConvert.DeserializeObject(sResponseFromServer, typeof (Dictionary<String,String>));
+                                    Dictionary<String, String> tmp = (Dictionary<String, String>)JsonConvert.DeserializeObject(sResponseFromServer, typeof(Dictionary<String, String>));
                                     tmp.TryGetValue("success", out string risultato);
                                     return risultato.Equals("1");
                                     //result.Response = sResponseFromServer;
@@ -361,15 +361,21 @@ namespace classi
             }
         }
 
-        private async static Task<Byte[]> PushBodyCreation(string username, string taskName, string taskCategory, string taskDate)
+        private async static Task<Byte[]> PushBodyCreation(string username, string taskName, string taskCategory, string taskDate, string usernameSending)
         {
+            string body;
+            if (usernameSending.Equals(String.Empty))
+                body = "Hai un nuovo compito!";
+            else
+                body = "Hey, " + usernameSending + " ti ha appena fornito un nuovo compito!";
+
             var payload = new
             {
                 to = await UserMethods.GetUserNotificationToken(username),
                 priority = "high",
                 data = new
                 {
-                    body = "Hey, " + "UTENTE" + " ti ha appena fornito un nuovo compito!",
+                    body = body,
                     name = taskName,
                     category = taskCategory,
                     scheduledTime = taskDate

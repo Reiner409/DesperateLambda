@@ -1,7 +1,7 @@
 {
   "QueryStringParameters": {
     "u": "pippo",
-    "family": "3",
+    "family": "1",
     "operation" : "addToFamily"
   }
 }
