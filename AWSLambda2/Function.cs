@@ -187,13 +187,20 @@ namespace AWSLambda2
         private APIGatewayProxyResponse Profile(APIGatewayProxyRequest request, ILambdaContext context, string operation)
         {
             IDictionary<string, string> dizionario = request.QueryStringParameters;
+            UserMethods funzioniDatabase = new UserMethods();
+            Codes codice = new Codes();
+            try
+            {
+
+            if (operation.Equals("resetPasswordRequestProfile"))
+            {
+                dizionario.TryGetValue(this.email, out string email);
+                codice = funzioniDatabase.ResetPasswordFirstStepAsync(email).Result;
+            }
+
             dizionario.TryGetValue(this.username, out string user);
 
 
-            UserMethods funzioniDatabase = new UserMethods();
-            try
-            {
-                Codes codice = new Codes();
                 if (operation.Equals("iconProfile"))
                 {
                     dizionario.TryGetValue(this.icon, out string icon);
@@ -206,10 +213,6 @@ namespace AWSLambda2
                     codice = funzioniDatabase.UpdateUserNameAsync(user, Encoding.UTF8.GetString(Convert.FromBase64String(name))).Result;
                 }
 
-                if (operation.Equals("resetPasswordRequestProfile"))
-                {
-                    codice = funzioniDatabase.ResetPasswordFirstStepAsync(user).Result;
-                }
                 if (operation.Equals("checkTokenProfile"))
                 {
                     dizionario.TryGetValue(this.token, out string token);

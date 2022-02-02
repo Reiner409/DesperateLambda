@@ -294,25 +294,25 @@ namespace classi
             }
         }
 
-        public async Task<Codes> ResetPasswordFirstStepAsync(string username)
+        public async Task<Codes> ResetPasswordFirstStepAsync(string email)
         {
             try
             {
                 await using var conn = new NpgsqlConnection(connString);
                 await conn.OpenAsync();
 
-                Console.WriteLine("-------------------RESETPASSWORD - SEND EMAIL " + username + "----------------------");
+                Console.WriteLine("-------------------RESETPASSWORD - SEND EMAIL " + email + "----------------------");
 
-                string email = "";
+                string username = "";
 
-                await using (var cmd = new NpgsqlCommand(String.Format("SELECT email FROM {0} WHERE username='{1}'", loginTable, username), conn))
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT username FROM {0} WHERE email='{1}'", loginTable, email), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
-                        email = reader.GetString(0).ToString();
+                        username = reader.GetString(0).ToString();
                 }
 
-                int token = GenerateTokenResetPassword(username);
+                int token = GenerateTokenResetPassword();
 
                 //Inserisci un nuovo token se non presente
                 try
@@ -340,7 +340,7 @@ namespace classi
             }
             catch
             {
-                Console.WriteLine("-------------------CRASH " + username + "----------------------");
+                Console.WriteLine("-------------------CRASH " + email + "----------------------");
                 return Codes.RegistrationError;
             }
         }
