@@ -283,7 +283,7 @@ namespace classi
             return tmp;
         }
 
-        private async Task<Boolean> VerificaEsistenzaTask(string username, string name, string category, string date, NpgsqlConnection conn)
+        private async static Task<Boolean> VerificaEsistenzaTask(string username, string name, string category, string date, NpgsqlConnection conn)
         {
             try
             {
@@ -322,7 +322,7 @@ namespace classi
             }
         }
 
-        private async Task<Boolean> GeneratePushNotification(string username, string taskName, string taskCategory, string taskDate)
+        private async static Task<Boolean> GeneratePushNotification(string username, string taskName, string taskCategory, string taskDate)
         {
             try
             {
@@ -361,7 +361,7 @@ namespace classi
             }
         }
 
-        private async Task<Byte[]> PushBodyCreation(string username, string taskName, string taskCategory, string taskDate)
+        private async static Task<Byte[]> PushBodyCreation(string username, string taskName, string taskCategory, string taskDate)
         {
             var payload = new
             {

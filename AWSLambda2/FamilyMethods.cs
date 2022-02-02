@@ -238,8 +238,22 @@ namespace classi
                     await cmd.ExecuteNonQueryAsync();
                 }
 
-                //string Evento = username + " si è aggiunto alla famiglia!";
-                //await CreateLogAsync(username, Evento, conn);
+
+                //Task che mostra l'unione dell'utente alla famiglia.
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                    "SELECT nome from {0} WHERE id={1}",
+                    familyTable, family), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (reader.ReadAsync().Result)
+                    {
+                        string familyName = reader.GetString(0);
+                        TaskMethods funzioniDatabase = new TaskMethods();
+                        await funzioniDatabase.AddTasksMethodAsync(username, "Benvenuto in " + familyName, "Altro", DateTime.Now.ToString(), "", "true");
+                    }
+                }
+
 
                 return Codes.GenericSuccess;
             }
@@ -288,6 +302,12 @@ namespace classi
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
+
+                //Task che mostra la creazione della famiglia.
+
+                TaskMethods funzioniDatabase = new TaskMethods();
+                await funzioniDatabase.AddTasksMethodAsync(username, "Hai creato " + family, "Altro", DateTime.Now.ToString(), "", "true");
+
                 return Codes.GenericSuccess;
             }
             catch
@@ -317,6 +337,22 @@ namespace classi
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
+
+                //Aggiunta la task che mostra il momento in cui si è usciti dalla famiglia.
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                    "SELECT nome from {0} WHERE id={1}",
+                    familyTable, family), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (reader.ReadAsync().Result)
+                    {
+                        string familyName = reader.GetString(0);
+                        TaskMethods funzioniDatabase = new TaskMethods();
+                        await funzioniDatabase.AddTasksMethodAsync(username, "Hai lasciato " + familyName, "Altro", DateTime.Now.ToString(), "", "true");
+                    }
+                }
+
 
                 return Codes.GenericSuccess;
             }

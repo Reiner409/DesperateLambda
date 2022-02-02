@@ -15,7 +15,7 @@ namespace AWSLambda2
 
 
 
-        internal async static Task<string> InviaEmailVerifica(string email, string user)
+        internal static string InviaEmailVerifica(string email, string user)
         {
 
             String token = EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString()+user);

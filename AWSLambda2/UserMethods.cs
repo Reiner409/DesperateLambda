@@ -263,7 +263,7 @@ namespace classi
                 if (await VerificaEsistenzaUser(username, conn))
                     return Codes.RegistrationUserExistsError;
 
-                string token = await EmailFunctions.InviaEmailVerifica(email, username);
+                string token = EmailFunctions.InviaEmailVerifica(email, username);
 
                 await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @pw, @em, @ver,@fam,@pic,@tok_not,@tok_auth,@nick)", loginTable), conn))
                 {
@@ -285,6 +285,12 @@ namespace classi
                     cmd2.Parameters.AddWithValue("tok", token);
                     await cmd2.ExecuteNonQueryAsync();
                 }
+
+                //Aggiunta della prima task di Benvenuto dopo la registrazione.
+
+                TaskMethods funzioniDatabase = new TaskMethods();
+                await funzioniDatabase.AddTasksMethodAsync(username, "Benvenuto su DesperateHouseworks", "Altro", DateTime.Now.ToString(), "", "true");
+
                 return Codes.GenericSuccess;
             }
             catch
@@ -321,8 +327,8 @@ namespace classi
                 catch
                 {
                     //Se già presente, lo aggiorno
-                    await using (var cmd2 = new NpgsqlCommand(String.Format("UPDATE {0} SET token={1}  WHERE email='{2}' ", 
-                        resetPasswordTable,token, email), conn))
+                    await using (var cmd2 = new NpgsqlCommand(String.Format("UPDATE {0} SET token={1}  WHERE email='{2}' ",
+                        resetPasswordTable, token, email), conn))
                     {
                         await cmd2.ExecuteNonQueryAsync();
                     }
@@ -373,7 +379,7 @@ namespace classi
 
         private string GenerateTokenVerifyUser(string user)
         {
-            return EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString()+user);
+            return EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString() + user);
         }
 
         private int GenerateTokenResetPassword()

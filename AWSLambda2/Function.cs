@@ -34,7 +34,7 @@ namespace AWSLambda2
         readonly string taskTime = "taskTime";
         readonly string taskDone = "taskDone";
 
-        readonly string numeroLog = "numeroLog";
+        //readonly string numeroLog = "numeroLog";
 
         public APIGatewayProxyResponse FunctionHandler(APIGatewayProxyRequest request, ILambdaContext context)
         {
@@ -327,7 +327,7 @@ namespace AWSLambda2
             switch (operation)
             {
                 case "addTask":
-                    return Response((funzioniDatabase.AddTasksMethodAsync(username, taskN, taskC, taskT, taskDescr, taskDone).Result));
+                    return Response(funzioniDatabase.AddTasksMethodAsync(username, taskN, taskC, taskT, taskDescr, taskDone).Result);
                 case "removeTask":
                     return Response((funzioniDatabase.RemoveTasksMethodAsync(username, taskN, taskC, taskT).Result));
                 case "updateVerTask":
