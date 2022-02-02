@@ -27,7 +27,7 @@ namespace classi
                     if (await reader.ReadAsync())
                     {
                         {
-                            if (reader.GetString(usId).Equals(username) && reader.GetString(pwId).Equals(EncDec.EncryptionHelper.Encrypt(username, password)))
+                            if (reader.GetString(usId).Equals(username) && reader.GetString(pwId).Equals(EncDec.EncryptionHelper.Encrypt(password)))
                                 if (reader.GetBoolean(loginVerId))
                                 {
                                     Dictionary<String, String> diz = new Dictionary<string, string>();
@@ -193,25 +193,25 @@ namespace classi
             }
         }
 
-        internal async Task<Codes> UpdateUserPasswordAsync(string username, string password)
+        internal async Task<Codes> UpdateUserPasswordAsync(string email, string password)
         {
             try
             {
                 await using var conn = new NpgsqlConnection(connString);
                 await conn.OpenAsync();
 
-                password = EncDec.EncryptionHelper.Encrypt(username, password);
+                password = EncDec.EncryptionHelper.Encrypt(password);
 
                 await using (var cmd = new NpgsqlCommand(String.Format(
-                        "UPDATE {0} SET password='{1}' WHERE username='{2}'",
-                        loginTable, password, username), conn))
+                        "UPDATE {0} SET password='{1}' WHERE email='{2}'",
+                        loginTable, password, email), conn))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
 
                 await using (var cmd = new NpgsqlCommand(String.Format(
-                    "DELETE FROM {0} WHERE username='{1}'",
-                    resetPasswordTable, username), conn))
+                    "DELETE FROM {0} WHERE email='{1}'",
+                    resetPasswordTable, email), conn))
                 {
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -268,7 +268,7 @@ namespace classi
                 await using (var cmd = new NpgsqlCommand(String.Format("INSERT INTO {0}  VALUES (@us, @pw, @em, @ver,@fam,@pic,@tok_not,@tok_auth,@nick)", loginTable), conn))
                 {
                     cmd.Parameters.AddWithValue("us", username);
-                    cmd.Parameters.AddWithValue("pw", EncDec.EncryptionHelper.Encrypt(username, password));
+                    cmd.Parameters.AddWithValue("pw", EncDec.EncryptionHelper.Encrypt(password));
                     cmd.Parameters.AddWithValue("em", email);
                     cmd.Parameters.AddWithValue("ver", false);
                     cmd.Parameters.AddWithValue("fam", DBNull.Value);
@@ -345,16 +345,16 @@ namespace classi
             }
         }
 
-        public async Task<Codes> VerifyResetPassword(string username, string tokenToVerify)
+        public async Task<Codes> VerifyResetPassword(string email, string tokenToVerify)
         {
             try
             {
                 await using var conn = new NpgsqlConnection(connString);
                 await conn.OpenAsync();
 
-                Console.WriteLine("-------------------RESETPASSWORD - VERIFY " + username + "----------------------");
+                Console.WriteLine("-------------------RESETPASSWORD - VERIFY " + email + "----------------------");
 
-                await using (var cmd = new NpgsqlCommand(String.Format("SELECT token FROM {0} WHERE username='{1}'", resetPasswordTable, username), conn))
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT token FROM {0} WHERE email='{1}'", resetPasswordTable, email), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                 {
                     if (await reader.ReadAsync())
@@ -372,14 +372,14 @@ namespace classi
 
             catch
             {
-                Console.WriteLine("-------------------CRASH " + username + "----------------------");
+                Console.WriteLine("-------------------CRASH " + email + "----------------------");
                 return Codes.RegistrationError;
             }
         }
 
         private string GenerateTokenVerifyUser(string user)
         {
-            return EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString(), user);
+            return EncDec.EncryptionHelper.Encrypt(DateTime.Now.ToString()+user);
         }
 
         private int GenerateTokenResetPassword()

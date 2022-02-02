@@ -198,7 +198,21 @@ namespace AWSLambda2
                 codice = funzioniDatabase.ResetPasswordFirstStepAsync(email).Result;
             }
 
-            dizionario.TryGetValue(this.username, out string user);
+                if (operation.Equals("checkTokenProfile"))
+                {
+                    dizionario.TryGetValue(this.email, out string email);
+                    dizionario.TryGetValue(this.token, out string token);
+                    codice = funzioniDatabase.VerifyResetPassword(email, token).Result;
+                }
+
+                if (operation.Equals("resetPasswordProfile"))
+                {
+                    dizionario.TryGetValue(this.email, out string email);
+                    dizionario.TryGetValue(this.password, out string password);
+                    codice = funzioniDatabase.UpdateUserPasswordAsync(email, password).Result;
+                }
+
+                dizionario.TryGetValue(this.username, out string user);
 
 
                 if (operation.Equals("iconProfile"))
@@ -213,16 +227,6 @@ namespace AWSLambda2
                     codice = funzioniDatabase.UpdateUserNameAsync(user, Encoding.UTF8.GetString(Convert.FromBase64String(name))).Result;
                 }
 
-                if (operation.Equals("checkTokenProfile"))
-                {
-                    dizionario.TryGetValue(this.token, out string token);
-                    codice = funzioniDatabase.VerifyResetPassword(user, token).Result;
-                }
-                if (operation.Equals("resetPasswordProfile"))
-                {
-                    dizionario.TryGetValue(this.password, out string password);
-                    codice = funzioniDatabase.UpdateUserPasswordAsync(user, password).Result;
-                }
                 return Response(codice);
             }
             catch
