@@ -35,6 +35,9 @@ FAMILY
 
  -  getFamily : Ottiene tutti i membri appartenenti alla famiglia.
     u
+
+ - updateNameFamily : Aggiorna il nome della famiglia.
+   u, family (New name)
  
  
  TASK

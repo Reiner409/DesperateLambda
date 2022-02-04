@@ -249,6 +249,14 @@ namespace AWSLambda2
                     return Response(Codes.FamilyUserAlreadyInFamily);
                 dizionario.TryGetValue(this.family, out family);
                 return Response(funzioniDatabase.CreateFamilyMethodAsync(username, family).Result);
+            } 
+            
+            if (operation.Equals("updateNameFamily"))
+            {
+                if (FamilyMethods.User2Family(username).Result.Count == 0)
+                    return Response(Codes.FamilyUserNotInFamily);
+                dizionario.TryGetValue(this.family, out family);
+                return Response(funzioniDatabase.UpdateFamilyNameAsync(username, family).Result);
             }
 
 

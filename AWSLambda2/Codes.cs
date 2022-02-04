@@ -52,6 +52,7 @@ namespace Codici
         JoinFamilyRequestAlreadyExistsError = 436,
         FamilyNoSuchJoinRequestError = 437,
         FamilyJoinRequestDeletionError = 438,
+        FamilyUpdateNameError = 439,
 
         //Medal
         MedalCreationError = 440,
@@ -148,6 +149,8 @@ namespace Codici
                     return "Family - No such Pending family join request exist";
                 case 438:
                     return "Family - Join Request Deletion error";
+                case 439:
+                    return "Family - Couldn't update name";
 
                 //Medal
                 case 440:

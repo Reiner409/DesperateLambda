@@ -151,9 +151,9 @@ namespace classi
             }
         }
 
-        internal async Task<Codes> AddTasksMethodAsync(string username, string usernameSending,
+        internal async Task<Codes> AddTasksMethodAsync(string username,
                                                                 string taskName, string taskCategory, string taskDate,
-                                                                string taskDescription, string taskDone)
+                                                                string taskDescription, string taskDone, string usernameSending)
         {
             try
             {
@@ -334,6 +334,7 @@ namespace classi
 
                 Byte[] byteArray = await PushBodyCreation(username, taskName, taskCategory, taskDate, usernameSending);
 
+
                 tRequest.ContentLength = byteArray.Length;
                 using (Stream dataStream = tRequest.GetRequestStream())
                 {
@@ -372,6 +373,7 @@ namespace classi
             var payload = new
             {
                 to = await UserMethods.GetUserNotificationToken(username),
+                icon = "https://i.imgur.com/QCht8R9.png",
                 priority = "high",
                 data = new
                 {
@@ -380,7 +382,6 @@ namespace classi
                     category = taskCategory,
                     scheduledTime = taskDate
                 }
-
             };
 
             string postbody = JsonConvert.SerializeObject(payload).ToString();

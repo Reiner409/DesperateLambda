@@ -250,7 +250,7 @@ namespace classi
                     {
                         string familyName = reader.GetString(0);
                         TaskMethods funzioniDatabase = new TaskMethods();
-                        await funzioniDatabase.AddTasksMethodAsync(username, "Benvenuto in " + familyName, "Altro", DateTime.Now.ToString(), "", "true");
+                        await funzioniDatabase.AddTasksMethodAsync(username, "", "Benvenuto in " + familyName, "Altro", DateTime.Now.ToString(), "", "true");
                     }
                 }
 
@@ -261,6 +261,45 @@ namespace classi
             {
                 Console.WriteLine("------------------- CRASH " + username + "----------------------");
                 return Codes.FamilyAddUserError;
+            }
+        }
+
+        internal async Task<Codes> UpdateFamilyNameAsync(string username, string name)
+        {
+            try
+            {
+                await using var conn = new NpgsqlConnection(connString);
+                await conn.OpenAsync();
+
+                Console.WriteLine("------------------- CreateFamily " + username + "----------------------");
+
+                //Si puo' rimuovere questo controllo, in quanto, se l'utente non esiste, il metodo che chiama questo metodo
+                //Verificherà che l'utente non ha una famiglia, in quanto non esiste.
+                //Lo lascio in quanto non si sa' mai
+
+                if (!VerificaEsistenzaUser(username, conn).Result)
+                    return Codes.FamilyCreationError;
+
+                (await User2Family(username)).TryGetValue("id", out string familyID);
+
+                await using (var cmd = new NpgsqlCommand(String.Format(
+                    "UPDATE {0} SET nome='{1}' WHERE id='{2}'",
+                    familyTable, name, familyID), conn))
+                {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                //Task che mostra la creazione della famiglia.
+
+                TaskMethods funzioniDatabase = new TaskMethods();
+                await funzioniDatabase.AddTasksMethodAsync(username, "", "Hai modificato il nome della famiglia :  " + name, "Altro", DateTime.Now.ToString(), "", "true");
+
+                return Codes.GenericSuccess;
+            }
+            catch
+            {
+                Console.WriteLine("------------------- CRASH " + username + "----------------------");
+                return Codes.FamilyCreationError;
             }
         }
 
@@ -306,7 +345,7 @@ namespace classi
                 //Task che mostra la creazione della famiglia.
 
                 TaskMethods funzioniDatabase = new TaskMethods();
-                await funzioniDatabase.AddTasksMethodAsync(username, "Hai creato " + family, "Altro", DateTime.Now.ToString(), "", "true");
+                await funzioniDatabase.AddTasksMethodAsync(username, "", "Hai creato " + family, "Altro", DateTime.Now.ToString(), "", "true");
 
                 return Codes.GenericSuccess;
             }
@@ -349,7 +388,7 @@ namespace classi
                     {
                         string familyName = reader.GetString(0);
                         TaskMethods funzioniDatabase = new TaskMethods();
-                        await funzioniDatabase.AddTasksMethodAsync(username, "Hai lasciato " + familyName, "Altro", DateTime.Now.ToString(), "", "true");
+                        await funzioniDatabase.AddTasksMethodAsync(username, "", "Hai lasciato " + familyName, "Altro", DateTime.Now.ToString(), "", "true");
                     }
                 }
 
