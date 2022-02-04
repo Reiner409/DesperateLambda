@@ -14,7 +14,7 @@ namespace classi
     {
         static public string connString =
             String.Format("Host={0};Username={1};Password={2};Database={3};Port={4}",
-                                   "151.24.29.32", "postgres", "123", "Datas", "5432");
+                                   "151.24.8.4", "postgres", "123", "Datas", "5432");
 
         static public String loginTable = "login";
         static public String registerTable = "registrazione";
