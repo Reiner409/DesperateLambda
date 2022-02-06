@@ -10,6 +10,7 @@ namespace classi
 
     class DataBaseFunctions
     {
+
         static public string connString
         {
             get
@@ -64,6 +65,7 @@ namespace classi
             }
             Console.WriteLine("------------------------");
         }
+
 
 
         static public String loginTable = "login";
