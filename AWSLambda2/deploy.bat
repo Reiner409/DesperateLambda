@@ -1,1 +1,1 @@
-dotnet lambda deploy-function DesperateLambda
+dotnet lambda deploy-function DesperateLambda2

@@ -3,7 +3,6 @@ using Codici;
 using Npgsql;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -57,9 +56,9 @@ namespace classi
                     return Tuple.Create(Codes.LoginUserNotExists, new Dictionary<String, String>());
                 }
             }
-            catch
+            catch (Exception e)
             {
-                Console.WriteLine("-------------------CRASH " + username + "----------------------");
+                Console.WriteLine("-------------------CRASH " + username + " "+e.ToString() +" ----------------------");
                 return Tuple.Create(Codes.LoginGenericError, new Dictionary<String, String>());
             }
         }

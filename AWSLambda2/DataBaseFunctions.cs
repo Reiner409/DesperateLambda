@@ -1,10 +1,8 @@
-﻿using AWSLambda2;
-using Codici;
-using Npgsql;
+﻿using Npgsql;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace classi
@@ -12,9 +10,61 @@ namespace classi
 
     class DataBaseFunctions
     {
-        static public string connString =
-            String.Format("Host={0};Username={1};Password={2};Database={3};Port={4}",
-                                   "151.24.29.32", "postgres", "123", "Datas", "5432");
+        static public string connString
+        {
+            get
+            {
+                string line;
+                int indice = 0;
+                string[] stringa = new string[5];
+
+                //Pass the file path and file name to the StreamReader constructor
+                try
+                {
+                    string path = Directory.GetCurrentDirectory();
+                    StreamReader sr = new StreamReader(path + "/Connection.txt");
+
+                    line = sr.ReadLine();
+
+                    //Continue to read until you reach end of file
+                    while (line != null)
+                    {
+                        if (line.StartsWith("*"))
+                        {
+
+                        }
+                        else
+                        {
+                            stringa[indice] = line;
+                            indice++;
+                        }
+                        line = sr.ReadLine();
+                    }
+                    //close the file
+                    sr.Close();
+
+                    return String.Format("Host={0};Username={1};Password={2};Database={3};Port={4}",
+                                       stringa[0], stringa[1], stringa[2], stringa[3], stringa[4]);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                    return "";
+                }
+            }
+        }
+
+        private static void Stampa(string path)
+        {
+            int contatore = 1;
+            foreach (var item in Directory.GetFiles(path))
+            {
+                Console.WriteLine("Oggetto  " + contatore + ": " + item);
+                contatore++;
+            }
+            Console.WriteLine("------------------------");
+        }
+
 
         static public String loginTable = "login";
         static public String registerTable = "registrazione";

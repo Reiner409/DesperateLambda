@@ -250,7 +250,7 @@ namespace classi
                     {
                         string familyName = reader.GetString(0);
                         TaskMethods funzioniDatabase = new TaskMethods();
-                        await funzioniDatabase.AddTasksMethodAsync(username, "", "Benvenuto in " + familyName, "Altro", DateTime.Now.ToString(), "", "true");
+                        await funzioniDatabase.AddTasksMethodAsync(username, "Benvenuto in " + familyName, "Altro", DateTime.Now.ToString(), "", "true", "");
                     }
                 }
 
@@ -292,7 +292,7 @@ namespace classi
                 //Task che mostra la creazione della famiglia.
 
                 TaskMethods funzioniDatabase = new TaskMethods();
-                await funzioniDatabase.AddTasksMethodAsync(username, "", "Hai modificato il nome della famiglia :  " + name, "Altro", DateTime.Now.ToString(), "", "true");
+                await funzioniDatabase.AddTasksMethodAsync(username, "Hai modificato il nome della famiglia :  " + name, "Altro", DateTime.Now.ToString(), "", "true", "");
 
                 return Codes.GenericSuccess;
             }
@@ -345,7 +345,7 @@ namespace classi
                 //Task che mostra la creazione della famiglia.
 
                 TaskMethods funzioniDatabase = new TaskMethods();
-                await funzioniDatabase.AddTasksMethodAsync(username, "", "Hai creato " + family, "Altro", DateTime.Now.ToString(), "", "true");
+                await funzioniDatabase.AddTasksMethodAsync(username, "Hai creato " + family, "Altro", DateTime.Now.ToString(), "", "true","");
 
                 return Codes.GenericSuccess;
             }
@@ -388,7 +388,7 @@ namespace classi
                     {
                         string familyName = reader.GetString(0);
                         TaskMethods funzioniDatabase = new TaskMethods();
-                        await funzioniDatabase.AddTasksMethodAsync(username, "", "Hai lasciato " + familyName, "Altro", DateTime.Now.ToString(), "", "true");
+                        await funzioniDatabase.AddTasksMethodAsync(username, "Hai lasciato " + familyName, "Altro", DateTime.Now.ToString(), "", "true", "");
                     }
                 }
 
