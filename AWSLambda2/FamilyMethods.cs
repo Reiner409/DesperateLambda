@@ -162,6 +162,11 @@ namespace classi
                     await cmd.ExecuteNonQueryAsync();
                 }
 
+                TaskMethods funzioniDatabase = new TaskMethods();
+                string nicknameUserRequesting = await UserMethods.GetNickname(usernameRequesting, conn);
+                string nicknameUser = await UserMethods.GetNickname(username, conn);
+                await funzioniDatabase.AddTasksMethodAsync(usernameRequesting, nicknameUserRequesting + "  ha invitato " + nicknameUser + " ad unirsi alla famiglia", "Altro", DateTime.Now.ToString(), "", "true", usernameRequesting);
+
                 Console.WriteLine("------------------- Inserita la richiesta di unione alla famiglia " + username + " -------------------");
 
                 //string Evento = usernameRequesting + " ha invitato " + username + " ad unirsi alla vostra famiglia";

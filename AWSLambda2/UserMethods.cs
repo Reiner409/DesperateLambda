@@ -58,7 +58,7 @@ namespace classi
             }
             catch (Exception e)
             {
-                Console.WriteLine("-------------------CRASH " + username + " "+e.ToString() +" ----------------------");
+                Console.WriteLine("-------------------CRASH " + username + " " + e.ToString() + " ----------------------");
                 return Tuple.Create(Codes.LoginGenericError, new Dictionary<String, String>());
             }
         }
@@ -204,7 +204,7 @@ namespace classi
                 await using (var cmd = new NpgsqlCommand(String.Format("SELECT username FROM {0} WHERE email='{1}'", loginTable, email), conn))
                 await using (var reader = await cmd.ExecuteReaderAsync())
                     if (await reader.ReadAsync())
-                        username =  reader.GetString(0);
+                        username = reader.GetString(0);
 
                 password = EncDec.EncryptionHelper.Encrypt(username, password);
 
@@ -262,8 +262,8 @@ namespace classi
 
                 Console.WriteLine("-------------------REGISTER " + username + "----------------------");
 
-                if (!MailVerificata(email))
-                    return Codes.RegistrationEmailNotValid;
+                //if (!MailVerificata(email))
+                //    return Codes.RegistrationEmailNotValid;
                 if (await VerificaEsistenzaMail(email, conn))
                     return Codes.RegistrationEmailExistsError;
                 if (await VerificaEsistenzaUser(username, conn))
@@ -295,7 +295,7 @@ namespace classi
                 //Aggiunta della prima task di Benvenuto dopo la registrazione.
 
                 TaskMethods funzioniDatabase = new TaskMethods();
-                await funzioniDatabase.AddTasksMethodAsync(username,"", "Benvenuto su DesperateHouseworks", "Altro", DateTime.Now.ToString(), "", "true");
+                await funzioniDatabase.AddTasksMethodAsync(username, "", "Benvenuto su DesperateHouseworks", "Altro", DateTime.Now.ToString(), "", "true");
 
                 return Codes.GenericSuccess;
             }
@@ -476,13 +476,32 @@ namespace classi
             }
         }
 
-        //Metodo per verificare la correttezza della mail usando Regex.
-        private bool MailVerificata(string email)
+        public static async Task<String> GetNickname(string username, NpgsqlConnection conn)
         {
-            Regex regex = new Regex(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$");
-            Match match = regex.Match(email);
-            return match.Success;
-        }
+            try
+            {
+                await using (var cmd = new NpgsqlCommand(String.Format("SELECT name FROM {0} WHERE username='{1}'", loginTable, username), conn))
+                await using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                        return reader.GetString(0);
+                    else
+                        return username;
+                }
+            }
+            catch
+            {
+                return username;
+            }
 
+            ////Metodo per verificare la correttezza della mail usando Regex.
+            //private bool MailVerificata(string email)
+            //{
+            //    Regex regex = new Regex(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$");
+            //    Match match = regex.Match(email);
+            //    return match.Success;
+            //}
+
+        }
     }
 }
