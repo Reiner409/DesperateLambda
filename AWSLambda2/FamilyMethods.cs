@@ -165,7 +165,7 @@ namespace classi
                 TaskMethods funzioniDatabase = new TaskMethods();
                 string nicknameUserRequesting = await UserMethods.GetNickname(usernameRequesting, conn);
                 string nicknameUser = await UserMethods.GetNickname(username, conn);
-                await funzioniDatabase.AddTasksMethodAsync(usernameRequesting, nicknameUserRequesting + "  ha invitato " + nicknameUser + " ad unirsi alla famiglia", "Altro", DateTime.Now.ToString(), " ", "true", usernameRequesting);
+                await funzioniDatabase.AddTasksMethodAsync(usernameRequesting, nicknameUserRequesting + "  ha invitato " + nicknameUser + " ad unirsi alla famiglia", "Altro", DateTime.Now.ToString(), "Nuovo invito in famiglia!", "true", usernameRequesting);
 
                 Console.WriteLine("------------------- Inserita la richiesta di unione alla famiglia " + username + " -------------------");
 
@@ -255,7 +255,7 @@ namespace classi
                     {
                         string familyName = reader.GetString(0);
                         TaskMethods funzioniDatabase = new TaskMethods();
-                        await funzioniDatabase.AddTasksMethodAsync(username, "Benvenuto in " + familyName, "Altro", DateTime.Now.ToString(), " ", "true", "");
+                        await funzioniDatabase.AddTasksMethodAsync(username, "Benvenuto in " + familyName, "Altro", DateTime.Now.ToString(), "Nuovo ingresso in famiglia!", "true", "");
                     }
                 }
 
@@ -297,7 +297,7 @@ namespace classi
                 //Task che mostra la creazione della famiglia.
 
                 TaskMethods funzioniDatabase = new TaskMethods();
-                await funzioniDatabase.AddTasksMethodAsync(username, "Hai modificato il nome della famiglia :  " + name, "Altro", DateTime.Now.ToString(), " ", "true", "");
+                await funzioniDatabase.AddTasksMethodAsync(username, "Hai modificato il nome della famiglia :  " + name, "Altro", DateTime.Now.ToString(), "Hai scelto proprio un bel nome!", "true", "");
 
                 return Codes.GenericSuccess;
             }
@@ -350,7 +350,7 @@ namespace classi
                 //Task che mostra la creazione della famiglia.
 
                 TaskMethods funzioniDatabase = new TaskMethods();
-                await funzioniDatabase.AddTasksMethodAsync(username, "Hai creato " + family, "Altro", DateTime.Now.ToString(), " ", "true","");
+                await funzioniDatabase.AddTasksMethodAsync(username, "Hai creato " + family, "Altro", DateTime.Now.ToString(), "Nuova famiglia creata!", "true","");
 
                 return Codes.GenericSuccess;
             }
@@ -393,7 +393,7 @@ namespace classi
                     {
                         string familyName = reader.GetString(0);
                         TaskMethods funzioniDatabase = new TaskMethods();
-                        await funzioniDatabase.AddTasksMethodAsync(username, "Hai lasciato " + familyName, "Altro", DateTime.Now.ToString(), " ", "true", "");
+                        await funzioniDatabase.AddTasksMethodAsync(username, "Hai lasciato " + familyName, "Altro", DateTime.Now.ToString(), "Sei uscito dalla famiglia.", "true", "");
                     }
                 }
 
