@@ -295,7 +295,7 @@ namespace classi
                 //Aggiunta della prima task di Benvenuto dopo la registrazione.
 
                 TaskMethods funzioniDatabase = new TaskMethods();
-                await funzioniDatabase.AddTasksMethodAsync(username, "Benvenuto su DesperateHouseworks", "Altro", DateTime.Now.ToString(), "", "true","");
+                await funzioniDatabase.AddTasksMethodAsync(username, "Benvenuto su DesperateHouseworks", "Altro", DateTime.Now.ToString(), " ", "true","");
 
                 return Codes.GenericSuccess;
             }
